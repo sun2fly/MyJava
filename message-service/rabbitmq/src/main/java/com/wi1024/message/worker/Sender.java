@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+import com.wi1024.message.RabbitConfig;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -20,15 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Sender implements Runnable {
 
-    private String host;
-    private Integer port;
+    private RabbitConfig config;
     private String exchange;
     private String message;
 
 
-    public Sender(String host, Integer port, String exchange, String message) {
-        this.host = host;
-        this.port = port;
+    public Sender(RabbitConfig config, String exchange, String message) {
+        this.config = config;
         this.exchange = exchange;
         this.message = message;
     }
@@ -36,10 +35,10 @@ public class Sender implements Runnable {
     public void run() {
         try{
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(host);
-            factory.setPort(port);
-            factory.setUsername("admin");
-            factory.setPassword("1qw23er4");
+            factory.setHost(config.getHost());
+            factory.setPort(config.getPort());
+            factory.setUsername(config.getUsername());
+            factory.setPassword(config.getPassword());
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
             channel.exchangeDeclare(exchange, BuiltinExchangeType.FANOUT);

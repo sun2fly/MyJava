@@ -11,6 +11,7 @@ import com.rabbitmq.client.Envelope;
 
 import java.io.IOException;
 
+import com.wi1024.message.RabbitConfig;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -26,24 +27,21 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Receiver implements Runnable {
 
-    private String host;
-    private Integer port;
+    private RabbitConfig config;
     private String exchange;
 
-    public Receiver(String host, Integer port, String exchange) {
-        this.host = host;
-        this.port = port;
+    public Receiver(RabbitConfig config, String exchange) {
+        this.config = config;
         this.exchange = exchange;
     }
-
 
     public void run() {
         try{
             ConnectionFactory factory = new ConnectionFactory();
-            factory.setHost(host);
-            factory.setPort(port);
-            factory.setUsername("admin");
-            factory.setPassword("1qw23er4");
+            factory.setHost(config.getHost());
+            factory.setPort(config.getPort());
+            factory.setUsername(config.getUsername());
+            factory.setPassword(config.getPassword());
 
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();

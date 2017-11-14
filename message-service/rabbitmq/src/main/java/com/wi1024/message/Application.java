@@ -19,10 +19,13 @@ public class Application {
         properties.load(Application.class.getClassLoader().getResourceAsStream("config.properties"));
         String host = properties.getProperty("rabbit.host");
         Integer port = Integer.parseInt(properties.getProperty("rabbit.port"));
+        String user = properties.getProperty("rabbit.user");
+        String password = properties.getProperty("rabbit.password");
         String exchange = properties.getProperty("rabbit.exchange");
+        RabbitConfig config = new RabbitConfig(host , port , user ,password);
 
 
-        Receiver receiver = new Receiver(host , port ,exchange);
+        Receiver receiver = new Receiver(config ,exchange);
         new Thread(receiver).start();
 
         //Sleep to wait receiver ready
@@ -35,7 +38,7 @@ public class Application {
         message.setMobile("18610335560");
         message.setUname("uname");
 
-        Sender sender = new Sender(host , port , exchange , message.toString());
+        Sender sender = new Sender(config , exchange , message.toString());
         new Thread(sender).start();
 
 
