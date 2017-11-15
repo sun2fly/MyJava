@@ -11,6 +11,27 @@
 
     <artifactId>rabbitmq</artifactId>
 
+    <profiles>
+        <profile>
+            <id>local</id>
+            <properties>
+                <env>local</env>
+                <jvmSettings.initialMemorySize>512</jvmSettings.initialMemorySize>
+                <jvmSettings.maxMemorySize>512</jvmSettings.maxMemorySize>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <env>dev</env>
+                <jvmSettings.initialMemorySize>512</jvmSettings.initialMemorySize>
+                <jvmSettings.maxMemorySize>512</jvmSettings.maxMemorySize>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
 
@@ -46,6 +67,21 @@
 
 
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>dev/*</exclude>
+                    <exclude>local/*</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources/${env}</directory>
+            </resource>
+        </resources>
+    </build>
 
 
 </project>
