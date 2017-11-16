@@ -47,6 +47,7 @@ public class Sender implements Runnable {
             channel.close();
             connection.close();
         }catch (Exception e){
+            e.printStackTrace();
             log.error(e.getMessage());
         }
 
