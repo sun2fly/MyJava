@@ -5,6 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+import com.rabbitmq.client.MessageProperties;
 import com.wi1024.message.RabbitConfig;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,6 +40,7 @@ public class Sender implements Runnable {
             factory.setPort(config.getPort());
             factory.setUsername(config.getUsername());
             factory.setPassword(config.getPassword());
+            factory.setVirtualHost(config.getVhost() == null ? "/" : config.getVhost());
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
             channel.exchangeDeclare(exchange, BuiltinExchangeType.FANOUT);

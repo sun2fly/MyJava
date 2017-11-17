@@ -28,7 +28,7 @@ public class RabbitConsumer extends TestBase {
         new Thread(receiver).start();
 
         //Sleep to wait receiver ready
-        Thread.sleep(1000 * 60);
+        Thread.sleep(1000 * 60 * 10);
 
 
 

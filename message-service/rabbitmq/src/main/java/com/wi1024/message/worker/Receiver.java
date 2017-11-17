@@ -42,10 +42,11 @@ public class Receiver implements Runnable {
             factory.setPort(config.getPort());
             factory.setUsername(config.getUsername());
             factory.setPassword(config.getPassword());
+            factory.setVirtualHost(config.getVhost());
 
             Connection connection = factory.newConnection();
             Channel channel = connection.createChannel();
-            channel.exchangeDeclare(exchange, BuiltinExchangeType.FANOUT);
+            channel.exchangeDeclare(exchange, BuiltinExchangeType.FANOUT , true);
             String queueName = channel.queueDeclare().getQueue();
             channel.queueBind(queueName, exchange, "");
 
@@ -59,8 +60,9 @@ public class Receiver implements Runnable {
                     log.info("Received '" + message + "'");
                 }
             };
-            channel.basicConsume(queueName, true, consumer);
+            channel.basicConsume(queueName, false, consumer);
         }catch (Exception e){
+            e.printStackTrace();
             log.error(e.getMessage());
         }
     }

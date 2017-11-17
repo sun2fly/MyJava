@@ -30,8 +30,9 @@ public class TestBase {
             Integer port = Integer.parseInt(properties.getProperty("rabbit.port"));
             String user = properties.getProperty("rabbit.user");
             String password = properties.getProperty("rabbit.password");
+            String vhost = properties.getProperty("rabbit.vhost");
             exchange = properties.getProperty("rabbit.exchange");
-            config = new RabbitConfig(host , port , user ,password);
+            config = new RabbitConfig(host , port , user ,password , vhost);
         } catch (IOException e) {
             log.error("fail to load config.properties , cause by : {}" , e.getMessage());
         }

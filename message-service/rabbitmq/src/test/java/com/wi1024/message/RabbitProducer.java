@@ -26,6 +26,8 @@ public class RabbitProducer extends TestBase {
 
         Sender sender = new Sender(config , exchange , message.toString());
         new Thread(sender).start();
+
+        Thread.sleep(1000 * 3);
     }
 
 }
