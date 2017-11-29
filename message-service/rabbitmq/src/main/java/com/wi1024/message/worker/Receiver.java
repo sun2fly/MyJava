@@ -17,7 +17,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * ${DESCRIPTION}
+ * RabbitMQ消息接收者
  *
  * @author songfei@xbniao.com
  * @create 2017/11/14 16:56
