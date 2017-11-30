@@ -16,6 +16,7 @@
 
     <modules>
         <module>message-service</module>
+        <module>thread</module>
     </modules>
 
 
