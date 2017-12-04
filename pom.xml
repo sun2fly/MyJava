@@ -17,6 +17,7 @@
     <modules>
         <module>message-service</module>
         <module>thread</module>
+        <module>data-structure</module>
     </modules>
 
 
