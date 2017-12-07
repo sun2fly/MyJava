@@ -2,7 +2,6 @@ package com.wi1024.struct.cache;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * LRU Cache By LinkedHashMap
