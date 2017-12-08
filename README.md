@@ -16,7 +16,7 @@ Modules :
 
  > data struct
 
- >    ![Collection](image/collection.png)
+   ![Collection](image/collection.png)
 
    ![Map](image/map.png)
 
@@ -69,6 +69,7 @@ Modules :
     3. Repeatable read (Innodb Default)
     4. Serializable
 
+    ![Map](image/mysql-transaction.png)
 
   > lock
     锁类型：
