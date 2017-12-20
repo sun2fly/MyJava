@@ -47,6 +47,9 @@ Modules :
    > Spring Aop
    > Spring Transaction
 
+ - Concurrent framework
+   > LMAX Disruptor
+
 
  - MyBatis
 
