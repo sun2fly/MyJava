@@ -1,16 +1,21 @@
 package com.wi1024.framework.concurrent;
 
 import com.lmax.disruptor.AlertException;
+import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
+import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.Sequencer;
 import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.YieldingWaitStrategy;
+import com.lmax.disruptor.dsl.Disruptor;
+import com.lmax.disruptor.dsl.ProducerType;
 
 import org.junit.Test;
 
 import java.util.Date;
+import java.util.concurrent.Executors;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -88,7 +93,34 @@ public class TestDisruptor {
 
     @Test
     public void multiThread() throws Exception {
+        MessageEventFactory eventFactory = new MessageEventFactory();
+        Disruptor<Message> disruptor = new Disruptor(eventFactory , getRingBufferSize(TOTAL) , Executors.defaultThreadFactory() , ProducerType.MULTI, new YieldingWaitStrategy());
+        EventHandler<Message> eventHandler = new MessageEventHandler();
+        disruptor.handleEventsWith(eventHandler);
+        disruptor.start();
+
+        RingBuffer<Message> ringBuffer = disruptor.getRingBuffer();
+        for(int i=0;i<TOTAL;i++){
+            long index = ringBuffer.next();
+            try{
+                ringBuffer.get(index).setId(Long.valueOf(i));
+                ringBuffer.get(index).setContent("Message index : " + i);
+                ringBuffer.get(index).setCreateAt(new Date());
+            }finally {
+                ringBuffer.publish(index);
+            }
+        }
+
+        Thread.sleep(1000 * 60 * 10);
+
     }
+
+    public void multiProducerByTranslator() {
+
+    }
+
+
+
 
     @Test
     public void shift() {
