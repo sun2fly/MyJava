@@ -53,6 +53,12 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- jodd library -->
+        <dependency>
+            <groupId>org.jodd</groupId>
+            <artifactId>jodd-all</artifactId>
+        </dependency>
+
         <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>

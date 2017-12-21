@@ -111,7 +111,8 @@ public class TestDisruptor {
             }
         }
 
-        Thread.sleep(1000 * 60 * 10);
+        disruptor.shutdown();
+
 
     }
 

@@ -33,6 +33,13 @@
                 <version>1.16.18</version>
             </dependency>
 
+            <!-- jodd library -->
+            <dependency>
+                <groupId>org.jodd</groupId>
+                <artifactId>jodd-all</artifactId>
+                <version>3.9.1</version>
+            </dependency>
+
             <!-- log commpent -->
             <dependency>
                 <groupId>org.slf4j</groupId>

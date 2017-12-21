@@ -2,6 +2,8 @@ package com.wi1024.framework.concurrent;
 
 import com.lmax.disruptor.RingBuffer;
 
+import java.util.Date;
+
 /**
  * 消息发送端
  *
@@ -17,12 +19,15 @@ public class MessageEventProducer {
     }
 
 
-    public void send(Message message) {
+    public void send(long id , String content , Date date ) {
         long seq = ringBuffer.next();
         try{
             Message event = ringBuffer.get(seq);
+            event.setId(id);
+            event.setContent(content);
+            event.setCreateAt(date);
         }finally {
-
+            ringBuffer.publish(seq);
         }
     }
 }
