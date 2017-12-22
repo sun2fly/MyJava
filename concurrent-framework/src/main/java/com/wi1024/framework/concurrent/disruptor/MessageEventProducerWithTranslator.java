@@ -1,18 +1,21 @@
-package com.wi1024.framework.concurrent;
+package com.wi1024.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.EventTranslatorVararg;
 import com.lmax.disruptor.RingBuffer;
+import com.wi1024.framework.concurrent.Message;
 
 import java.util.Date;
 
 import jodd.typeconverter.Convert;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * ${DESCRIPTION}
+ * 使用EventTranslatorVararg回调方式创建Producer
  *
  * @author songfei@xbniao.com
  * @create 2017/12/21 17:38
  **/
+@Slf4j
 public class MessageEventProducerWithTranslator {
 
     private EventTranslatorVararg eventTranslatorVararg = new EventTranslatorVararg<Message>() {
@@ -21,25 +24,19 @@ public class MessageEventProducerWithTranslator {
             event.setId(Convert.toLong(args[0]));
             event.setContent(Convert.toString(args[1]));
             event.setCreateAt(Convert.toDate(args[2]));
-
         }
     };
 
+    private String name ;
     private final RingBuffer<Message> ringBuffer;
 
-    public MessageEventProducerWithTranslator(RingBuffer<Message> ringBuffer) {
+    public MessageEventProducerWithTranslator(String name , RingBuffer<Message> ringBuffer) {
+        this.name = name ;
         this.ringBuffer = ringBuffer;
     }
 
-    public void send(long id , String content , Date date ) {
-        long seq = ringBuffer.next();
-        try{
-            Message event = ringBuffer.get(seq);
-            event.setId(id);
-            event.setContent(content);
-            event.setCreateAt(date);
-        }finally {
-            ringBuffer.publish(seq);
-        }
+    public void onData(long id , String content , Date date ) {
+        log.debug("MessageEventProducerWithTranslator Name : {}" , this.name);
+        ringBuffer.publishEvent(eventTranslatorVararg , id , content , date);
     }
 }
