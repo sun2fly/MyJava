@@ -4,9 +4,11 @@ import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
+import com.lmax.disruptor.Sequence;
 import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.Sequencer;
 import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.WorkProcessor;
 import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
@@ -57,7 +59,7 @@ public class TestDisruptor {
                 for(int i=0;i<=TOTAL;i++){
                     long index = ringBuffer.next();
                     ringBuffer.get(index).setId(Long.valueOf(i));
-                    ringBuffer.get(index).setContent("Message index : " + i);
+                    ringBuffer.get(index).setContent("MessageEvent index : " + i);
                     ringBuffer.get(index).setCreateAt(new Date());
                     ringBuffer.publish(index);
                     log.info("Produce message : {}" , i);
@@ -116,7 +118,7 @@ public class TestDisruptor {
             long index = ringBuffer.next();
             try{
                 ringBuffer.get(index).setId(Long.valueOf(i));
-                ringBuffer.get(index).setContent("Message index : " + i);
+                ringBuffer.get(index).setContent("MessageEvent index : " + i);
                 ringBuffer.get(index).setCreateAt(new Date());
             }finally {
                 ringBuffer.publish(index);
@@ -138,7 +140,7 @@ public class TestDisruptor {
         RingBuffer<MessageEvent> ringBuffer = disruptor.getRingBuffer();
         MessageEventProducer producer = new MessageEventProducer(ringBuffer);
         for(int i=0;i<TOTAL;i++){
-            producer.onData(i , "Message index : " + i , new Date());
+            producer.onData(i , "MessageEvent index : " + i , new Date());
         }
         Thread.sleep(1000);
         disruptor.shutdown();
@@ -155,7 +157,7 @@ public class TestDisruptor {
         RingBuffer<MessageEvent> ringBuffer = disruptor.getRingBuffer();
         MessageEventProducerWithTranslator producerWithTranslator = new MessageEventProducerWithTranslator("Producer-1",ringBuffer);
         for(int i=0;i<TOTAL;i++){
-            producerWithTranslator.onData(i , "Message index : " + i , new Date());
+            producerWithTranslator.onData(i , "MessageEvent index : " + i , new Date());
         }
         Thread.sleep(1000);
         disruptor.shutdown();
@@ -179,7 +181,7 @@ public class TestDisruptor {
         RingBuffer<MessageEvent> ringBuffer = disruptor.getRingBuffer();
         MessageEventProducerWithTranslator producerWithTranslator = new MessageEventProducerWithTranslator("Producer-1",ringBuffer);
         for(int i=0;i<TOTAL;i++){
-            producerWithTranslator.onData(i , "Message index : " + i , new Date());
+            producerWithTranslator.onData(i , "MessageEvent index : " + i , new Date());
         }
         Thread.sleep(1000);
         disruptor.shutdown();
@@ -215,7 +217,7 @@ public class TestDisruptor {
         RingBuffer<MessageEvent> ringBuffer = disruptor.getRingBuffer();
         MessageEventProducerWithTranslator producerWithTranslator = new MessageEventProducerWithTranslator("Producer-1",ringBuffer);
         for(int i=0;i<TOTAL;i++){
-            producerWithTranslator.onData(i , "Message index : " + i , new Date());
+            producerWithTranslator.onData(i , "MessageEvent index : " + i , new Date());
         }
         Thread.sleep(1000);
         disruptor.shutdown();
@@ -254,9 +256,9 @@ public class TestDisruptor {
         MessageEventProducerWithTranslator producerWithTranslator3 = new MessageEventProducerWithTranslator("Producer-3",ringBuffer);
 
         for(int i=0;i<TOTAL;i++){
-            producerWithTranslator1.onData(i , "Message-1 index : " + i , new Date());
-            producerWithTranslator2.onData(i , "Message-2 index : " + i , new Date());
-            producerWithTranslator3.onData(i , "Message-3 index : " + i , new Date());
+            producerWithTranslator1.onData(i , "MessageEvent-1 index : " + i , new Date());
+            producerWithTranslator2.onData(i , "MessageEvent-2 index : " + i , new Date());
+            producerWithTranslator3.onData(i , "MessageEvent-3 index : " + i , new Date());
         }
         Thread.sleep(1000);
         disruptor.shutdown();
@@ -280,23 +282,52 @@ public class TestDisruptor {
         disruptor.start();
 
         /*Executor executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        RingBuffer<Message> ringBuffer = RingBuffer.create(ProducerType.MULTI , eventFactory , getRingBufferSize(TOTAL) , new YieldingWaitStrategy());
+        RingBuffer<MessageEvent> ringBuffer = RingBuffer.create(ProducerType.MULTI , eventFactory , getRingBufferSize(TOTAL) , new YieldingWaitStrategy());
         SequenceBarrier sequenceBarrier = ringBuffer.newBarrier();
-        WorkerPool<Message> workerPool = new WorkerPool<Message>(ringBuffer , sequenceBarrier , new MessageEventExceptionHandler() , consumers);
+        WorkerPool<MessageEvent> workerPool = new WorkerPool<MessageEvent>(ringBuffer , sequenceBarrier , new MessageEventExceptionHandler() , consumers);
         ringBuffer.addGatingSequences(workerPool.getWorkerSequences());
         workerPool.start(executor);*/
 
         RingBuffer<MessageEvent> ringBuffer = disruptor.getRingBuffer();
         MessageEventProducerWithTranslator producerWithTranslator = new MessageEventProducerWithTranslator("Producer",ringBuffer);
         for(int i=0;i<TOTAL;i++){
-            producerWithTranslator.onData(i , "Message-" + i , new Date());
+            producerWithTranslator.onData(i , "MessageEvent-" + i , new Date());
         }
         Thread.sleep(1000);
+
+        disruptor.shutdown();
 
     }
 
     @Test
     public void withBatchConsumer() throws Exception {
+
+    }
+
+
+    public void withWorkProcesser() throws Exception {
+        MessageEventFactory eventFactory = new MessageEventFactory();
+        RingBuffer<MessageEvent> ringBuffer = RingBuffer.createMultiProducer(eventFactory , getRingBufferSize(TOTAL) , new YieldingWaitStrategy());
+
+
+        Sequence workSequence = new Sequence(-1);
+
+        MessageEventWorkHandler[] messageWorkHandler = new MessageEventWorkHandler[2];
+        for(int i=0;i<messageWorkHandler.length;i++){
+            messageWorkHandler[i] = new MessageEventWorkHandler("WorkHandler-"+i);
+        }
+
+        WorkProcessor<MessageEvent>[] workProcessors = new WorkProcessor[2];
+        for(int i=0;i<workProcessors.length;i++){
+            workProcessors[0] = new WorkProcessor(ringBuffer,ringBuffer.newBarrier(),messageWorkHandler[i] , new MessageEventExceptionHandler(),workSequence);
+        }
+
+
+        MessageEventProducerWithTranslator[] producerWithTranslators = new MessageEventProducerWithTranslator[2];
+        for(int i=0;i<producerWithTranslators.length;i++){
+            producerWithTranslators[i] = new MessageEventProducerWithTranslator("ProducerWithTranslator-"+i , ringBuffer);
+        }
+        ringBuffer.addGatingSequences(workProcessors[0].getSequence() , workProcessors[1].getSequence());
 
     }
 
