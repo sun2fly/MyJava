@@ -1,7 +1,7 @@
 package com.wi1024.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.RingBuffer;
-import com.wi1024.framework.concurrent.Message;
+import com.wi1024.framework.concurrent.MessageEvent;
 
 import java.util.Date;
 
@@ -13,9 +13,9 @@ import java.util.Date;
  **/
 public class MessageEventProducer {
 
-    private final RingBuffer<Message> ringBuffer;
+    private final RingBuffer<MessageEvent> ringBuffer;
 
-    public MessageEventProducer(RingBuffer<Message> ringBuffer) {
+    public MessageEventProducer(RingBuffer<MessageEvent> ringBuffer) {
         this.ringBuffer = ringBuffer;
     }
 
@@ -23,7 +23,7 @@ public class MessageEventProducer {
     public void onData(long id , String content , Date date ) {
         long seq = ringBuffer.next();
         try{
-            Message event = ringBuffer.get(seq);
+            MessageEvent event = ringBuffer.get(seq);
             event.setId(id);
             event.setContent(content);
             event.setCreateAt(date);

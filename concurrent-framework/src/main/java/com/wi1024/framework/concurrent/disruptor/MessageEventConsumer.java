@@ -2,7 +2,7 @@ package com.wi1024.framework.concurrent.disruptor;
 
 
 import com.lmax.disruptor.EventHandler;
-import com.wi1024.framework.concurrent.Message;
+import com.wi1024.framework.concurrent.MessageEvent;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * @create 2017/12/22 09:12
  **/
 @Slf4j
-public class MessageEventConsumer implements EventHandler<Message> {
+public class MessageEventConsumer implements EventHandler<MessageEvent> {
     /**
      * 消费者名称
      */
@@ -24,7 +24,7 @@ public class MessageEventConsumer implements EventHandler<Message> {
     }
 
     @Override
-    public void onEvent(Message event, long sequence, boolean endOfBatch) throws Exception {
+    public void onEvent(MessageEvent event, long sequence, boolean endOfBatch) throws Exception {
         log.info("Consumer name : {} , sequence : {} , event : {} , endOfBatch : {}" , this.name, sequence , event.toString() , endOfBatch);
     }
 }

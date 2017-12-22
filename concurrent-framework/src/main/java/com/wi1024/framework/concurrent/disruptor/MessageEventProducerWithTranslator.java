@@ -2,7 +2,7 @@ package com.wi1024.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.EventTranslatorVararg;
 import com.lmax.disruptor.RingBuffer;
-import com.wi1024.framework.concurrent.Message;
+import com.wi1024.framework.concurrent.MessageEvent;
 
 import java.util.Date;
 
@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageEventProducerWithTranslator {
 
-    private EventTranslatorVararg eventTranslatorVararg = new EventTranslatorVararg<Message>() {
+    private EventTranslatorVararg eventTranslatorVararg = new EventTranslatorVararg<MessageEvent>() {
         @Override
-        public void translateTo(Message event, long sequence, Object... args) {
+        public void translateTo(MessageEvent event, long sequence, Object... args) {
             event.setId(Convert.toLong(args[0]));
             event.setContent(Convert.toString(args[1]));
             event.setCreateAt(Convert.toDate(args[2]));
@@ -28,9 +28,9 @@ public class MessageEventProducerWithTranslator {
     };
 
     private String name ;
-    private final RingBuffer<Message> ringBuffer;
+    private final RingBuffer<MessageEvent> ringBuffer;
 
-    public MessageEventProducerWithTranslator(String name , RingBuffer<Message> ringBuffer) {
+    public MessageEventProducerWithTranslator(String name , RingBuffer<MessageEvent> ringBuffer) {
         this.name = name ;
         this.ringBuffer = ringBuffer;
     }

@@ -1,7 +1,7 @@
 package com.wi1024.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.EventFactory;
-import com.wi1024.framework.concurrent.Message;
+import com.wi1024.framework.concurrent.MessageEvent;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -12,10 +12,10 @@ import lombok.extern.slf4j.Slf4j;
  * @create 2017/12/21 09:12
  **/
 @Slf4j
-public class MessageEventFactory implements EventFactory<Message> {
+public class MessageEventFactory implements EventFactory<MessageEvent> {
     @Override
-    public Message newInstance() {
+    public MessageEvent newInstance() {
         log.debug("Init message ... ");
-        return new Message();
+        return new MessageEvent();
     }
 }

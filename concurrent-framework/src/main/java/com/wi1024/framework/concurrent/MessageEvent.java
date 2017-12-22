@@ -11,7 +11,7 @@ import lombok.Data;
  * @create 2017/12/20 16:15
  **/
 @Data
-public class Message {
+public class MessageEvent {
 
     private Long id ;
     private String content;
