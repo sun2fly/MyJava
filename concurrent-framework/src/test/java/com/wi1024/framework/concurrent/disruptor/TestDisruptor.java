@@ -1,4 +1,4 @@
-package com.wi1024.framework.concurrent;
+package com.wi1024.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.EventFactory;
