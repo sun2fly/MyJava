@@ -46,7 +46,7 @@
 
    3. **Behavioral**
    * Chain of Responsibility
-   * Command
+   * Command ![Command Pattern](image/command.jpg)
    * Interpreter
    * Iterator
    * Mediator
