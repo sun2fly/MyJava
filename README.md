@@ -1,18 +1,18 @@
-# My Java Pratice
+## My Java Pratice
 
    _All code of my java pratice_
 
-Modules :
+**Modules** :
 
  > message-service  
    *  rabbitmq
    *  kafka
 
  > thread
- *  join , wait , notify , notifyAll , yield , sleep
- *  Synchronize , lock , AbstractQueuedSynchronizer , ReentrantLock , ReentrantReadWriteLock
- *  ExecutorService , FutrueTask , CompletableFuture , Callable , ThreadPoolExecutor
- *  ConcurrentHashMap , ConcurrentLinkedQueue
+   *  join , wait , notify , notifyAll , yield , sleep
+   * Synchronize , lock , AbstractQueuedSynchronizer , ReentrantLock , ReentrantReadWriteLock
+   * ExecutorService , FutrueTask , CompletableFuture , Callable , ThreadPoolExecutor
+   * ConcurrentHashMap , ConcurrentLinkedQueue
 
  > data struct
 
@@ -20,82 +20,101 @@ Modules :
 
    ![Map](image/map.png)
 
-   > heap , stack , map , collections
+   * heap , stack , map , collections
 
- - IO/NIO
-   > MappedByteBuffer , RandomAccessFile
+ > IO/NIO
+   * MappedByteBuffer , RandomAccessFile
 
- - Design Pattern
-   > Singleton
-   > Builder
-   > Proxy
-   > Adaptor
-   > Factory
+ > Design Pattern
 
- - AOP
-   > Proxy , InvocationHandler
-   > Asm ,Javassist , Cglib
+   1. **Creational**
+   * Singleton
+   * Simple Factory
+   * Factory Method
+   * Abstract Factory
+   * Prototype
+   * Builder
 
- - JVM
-   > ClassLoader
-   > Gc algorithm
-   > Heap area , Stack area , Method area ,
-   > Jvm configure parameter
+   2. **Structural**
+   * Adapter
+   * Bridge
+   * Composite
+   * Decorator
+   * Facade
+   * Flyweight
+   * Proxy
 
- - Spring
-   > Ioc
-   > Spring Aop
-   > Spring Transaction
+   3. **Behavioral**
+   * Chain of Responsibility
+   * Command
+   * Interpreter
+   * Iterator
+   * Mediator
+   * Memento
+   * Observer
+   * State
+   * Strategy
+   * Template Method
+   * Visitor
 
- - Concurrent framework
-   > LMAX Disruptor
-   ![Disruptor](image/disruptor.png)
+ > AOP
+   * Proxy , InvocationHandler
+   * Asm ,Javassist , Cglib
+
+ > JVM
+   * ClassLoader
+   * Gc algorithm
+   * Heap area , Stack area , Method area ,
+   * Jvm configure parameter
+
+ > Spring
+   *  Ioc
+   *  Spring Aop
+   *  Spring Transaction
+
+ > Concurrent framework
+   * LMAX Disruptor
+        ![disruptor](image/disruptor.png)
+
+ > MyBatis
 
 
- - MyBatis
+ > MySQL
 
+   *  index type & principle
+   1. B-Tree
+   2. Hash
+   3. Fulltext (全文索引)
+   4. SPATIAL  (空间索引）
+   一级索引 、 二级索引
+   聚簇索引 、非聚簇索引
 
- - MySQL
-  > index type & principle
-    索引类型:
-    >
-        1. B-Tree
-        2. Hash
-        3. Fulltext (全文索引)
-        4. SPATIAL  (空间索引）
-        一级索引 、 二级索引
-        聚簇索引 、非聚簇索引
-
-
-  > transaction
-    1. Read uncommited
-    2. Read commited
-    3. Repeatable read (Innodb Default)
-    4. Serializable
+   * transaction
+   1. Read uncommited
+   2. Read commited
+   3. Repeatable read (Innodb Default)
+   4. Serializable
 
     ![Map](image/mysql-transaction.png)
 
-  > lock
-    锁类型：
-    >
-        1. 行级锁定
-        2. 表级锁定
-        3. 页级锁定
+   * lock
+   1. 行级锁定
+   2. 表级锁定
+   3. 页级锁定
 
-  > Sharding
-  > cluster
-  > SQL optimization （Where using index ）
+   * Sharding
+   * cluster
+   * SQL optimization （Where using index ）
 
 
- - Redis
-  > hashes , lists, sets , sorted sets , Bitmaps
-  > clusters
-  > transaction
-  > commands
+ > Redis
+   * hashes , lists, sets , sorted sets , Bitmaps
+   * clusters
+   * transaction
+   * commands
 
 
- - Dubbo
-  >
+ > Dubbo
 
 
  > Common lib
