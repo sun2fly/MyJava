@@ -14,7 +14,7 @@ public class Invoker {
         this.command = command;
     }
 
-    public void aaction() {
+    public void action() {
         command.execute();
     }
 }
