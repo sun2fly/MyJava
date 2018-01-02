@@ -31,7 +31,7 @@ import org.junit.Test;
 public class PrototypePatternTest extends TestBase {
 
     @Test
-    public void exec() {
+    public void exec() throws Exception  {
         ConcretePrototype prototype = new ConcretePrototype();
         for(int i=0;i<10;i++){
             ConcretePrototype clonePrototype = (ConcretePrototype)prototype.clone();

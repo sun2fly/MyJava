@@ -1,15 +1,18 @@
 package com.wi1024.pattern.behavior.command;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
- * ${DESCRIPTION}
+ * 命令接收者
  *
  * @author songfei@xbniao.com
  * @create 2017/12/27 13:48
  **/
+@Slf4j
 public class Receiver {
 
 
     public void action () {
-        System.out.print("执行操作");
+        log.info("========== 执行操作 ==========");
     }
 }
