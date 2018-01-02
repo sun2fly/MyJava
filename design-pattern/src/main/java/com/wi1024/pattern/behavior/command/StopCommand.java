@@ -1,7 +1,7 @@
 package com.wi1024.pattern.behavior.command;
 
 /**
- * ${DESCRIPTION}
+ * AudioPlayer - Stop Command
  *
  * @author songfei@xbniao.com
  * @create 2017/12/27 14:29

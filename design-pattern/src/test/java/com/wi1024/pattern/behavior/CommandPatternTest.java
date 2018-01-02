@@ -30,7 +30,7 @@ public class CommandPatternTest extends TestBase {
         Command command = new ConcreteCommand(receiver);
 
         Invoker invoker = new Invoker(command);
-        invoker.aaction();
+        invoker.action();
     }
 
     @Test
