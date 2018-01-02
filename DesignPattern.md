@@ -24,3 +24,35 @@
  > 6、合成复用原则（Composite Reuse Principle）
 
 原则是尽量使用合成/聚合的方式，而不是使用继承。
+
+## 23 kinds of Design Pattern
+
+ > **Creational**
+   * Singleton
+   * Simple Factory
+   * Factory Method
+   * Abstract Factory
+   * Prototype
+   * Builder
+
+ > **Structural**
+   * Adapter
+   * Bridge
+   * Composite
+   * Decorator
+   * Facade
+   * Flyweight
+   * Proxy
+
+ > **Behavioral**
+   * Chain of Responsibility
+   * Command ![Command Pattern](image/command.jpg)
+   * Interpreter
+   * Iterator
+   * Mediator
+   * Memento
+   * Observer
+   * State
+   * Strategy
+   * Template Method
+   * Visitor
