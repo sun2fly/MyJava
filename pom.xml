@@ -41,6 +41,21 @@
                 <version>3.9.1</version>
             </dependency>
 
+            <!-- guava library -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>23.0</version>
+            </dependency>
+
+            <!-- cglib library -->
+            <dependency>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>3.2.5</version>
+            </dependency>
+
+
             <!-- log commpent -->
             <dependency>
                 <groupId>org.slf4j</groupId>
