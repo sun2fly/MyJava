@@ -1,4 +1,4 @@
-package com.wi1024.pattern.struct;
+package com.wi1024.pattern.struct.adapter;
 
 /**
  * 缺省适配器

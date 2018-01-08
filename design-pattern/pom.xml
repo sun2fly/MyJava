@@ -48,6 +48,17 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- guava library -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
+        </dependency>
+
         <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>
