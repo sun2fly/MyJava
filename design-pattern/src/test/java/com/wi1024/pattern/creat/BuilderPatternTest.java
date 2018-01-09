@@ -46,9 +46,9 @@ public class BuilderPatternTest extends TestBase {
         Director director = new Director(builder);
         director.construct();
         Product product = builder.getResult();
-        log.info(LogUtil.format("product:{}") , product);
+        log.info(LogUtil.print("product:{}") , product);
 
         Person person = new Person.Builder("felix", "male" , new Date(), "wi1024u@gmail.com").height(180).builder();
-        log.info(LogUtil.format("{}") , person);
+        log.info(LogUtil.print("{}") , person);
     }
 }

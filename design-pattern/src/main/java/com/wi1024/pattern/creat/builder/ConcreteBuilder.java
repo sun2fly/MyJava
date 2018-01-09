@@ -23,25 +23,25 @@ public class ConcreteBuilder implements Builder {
 
     @Override
     public void buildPartA() {
-        log.info(LogUtil.format("ConcreteBuilder#buildPartA()"));
+        log.info(LogUtil.print("ConcreteBuilder#buildPartA()"));
         product.setPartA("Concrete PartA");
     }
 
     @Override
     public void buildPartB() {
-        log.info(LogUtil.format("ConcreteBuilder#buildPartB()"));
+        log.info(LogUtil.print("ConcreteBuilder#buildPartB()"));
         product.setPartB("Concrete PartB");
     }
 
     @Override
     public void buildPartC() {
-        log.info(LogUtil.format("ConcreteBuilder#buildPartC()"));
+        log.info(LogUtil.print("ConcreteBuilder#buildPartC()"));
         product.setPartC("Concrete PartC");
     }
 
     @Override
     public Product getResult() {
-        log.info(LogUtil.format("ConcreteBuilder#getResult()"));
+        log.info(LogUtil.print("ConcreteBuilder#getResult()"));
         //TODO The product info
         return product;
     }

@@ -8,7 +8,7 @@ package com.wi1024.pattern;
  **/
 public class LogUtil {
 
-    public static String format(String s) {
+    public static String print(String s) {
         StringBuilder stringBuilder = new StringBuilder("========== ");
         stringBuilder.append(s);
         stringBuilder.append(" ==========");
