@@ -4,13 +4,14 @@
 
     <groupId>com.wi1024</groupId>
     <artifactId>parent</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
 
     <scm>
         <url>https://github.com/sun2fly/MyJava</url>
         <developerConnection>scm:git:https://github.com/sun2fly/MyJava</developerConnection>
-    </scm>
+      <tag>v1.0.1-release</tag>
+  </scm>
 
     <developers>
         <developer>
