@@ -9,6 +9,19 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
+    <scm>
+        <url>https://github.com/sun2fly/MyJava</url>
+        <connection>https://github.com/sun2fly/MyJava.git</connection>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>sun2fly</name>
+            <email>wi1024u@gmail.com</email>
+            <organization>wi1024.com</organization>
+        </developer>
+    </developers>
+
     <properties>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j2.version>2.10.0</log4j2.version>
