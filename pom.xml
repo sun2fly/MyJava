@@ -10,7 +10,6 @@
     <scm>
         <url>https://github.com/sun2fly/MyJava</url>
         <developerConnection>scm:git:https://github.com/sun2fly/MyJava</developerConnection>
-      <tag>HEAD</tag>
   </scm>
 
     <developers>
