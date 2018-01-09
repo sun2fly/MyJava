@@ -13,13 +13,7 @@ import com.lmax.disruptor.YieldingWaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.wi1024.framework.concurrent.disruptor.MessageEventConsumer;
-import com.wi1024.framework.concurrent.disruptor.MessageEventExceptionHandler;
-import com.wi1024.framework.concurrent.disruptor.MessageEventFactory;
-import com.wi1024.framework.concurrent.disruptor.MessageEventHandler;
-import com.wi1024.framework.concurrent.disruptor.MessageEventProducer;
-import com.wi1024.framework.concurrent.disruptor.MessageEventProducerWithTranslator;
-import com.wi1024.framework.concurrent.disruptor.MessageEventWorkHandler;
+import com.wi1024.framework.concurrent.MessageEvent;
 
 import org.junit.Test;
 
