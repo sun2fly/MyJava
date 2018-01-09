@@ -11,7 +11,7 @@
 
     <scm>
         <url>https://github.com/sun2fly/MyJava</url>
-        <connection>https://github.com/sun2fly/MyJava.git</connection>
+        <developerConnection>scm:git:https://github.com/sun2fly/MyJava</developerConnection>
     </scm>
 
     <developers>
