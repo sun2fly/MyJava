@@ -7,9 +7,12 @@
  > message-service  
    *  rabbitmq
    *  kafka
+ > basic
+   * final , static , abstract
+   * reflect , classloader
 
  > thread
-   *  join , wait , notify , notifyAll , yield , sleep
+   * join , wait , notify , notifyAll , yield , sleep , volatile
    * Synchronize , lock , AbstractQueuedSynchronizer , ReentrantLock , ReentrantReadWriteLock
    * ExecutorService , FutrueTask , CompletableFuture , Callable , ThreadPoolExecutor
    * ConcurrentHashMap , ConcurrentLinkedQueue
@@ -36,7 +39,7 @@
    * Jvm configure parameter
 
  > Spring
-   *  Ioc
+   *  Ioc , The process of bean initial
    *  Spring Aop
    *  Spring Transaction
 
@@ -44,8 +47,10 @@
    * LMAX Disruptor
         ![disruptor](image/disruptor.png)
 
- > MyBatis
 
+ > Netty & Actor
+
+ > MyBatis
 
  > MySQL
 

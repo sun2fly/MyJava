@@ -1,6 +1,7 @@
 package com.wi1024.pattern.creat;
 
 import com.wi1024.pattern.TestBase;
+import com.wi1024.pattern.creat.prototype.ConcretePrototype;
 
 import org.junit.Test;
 

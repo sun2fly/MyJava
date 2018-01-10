@@ -1,4 +1,4 @@
-package com.wi1024.pattern.creat;
+package com.wi1024.pattern.creat.prototype;
 
 import lombok.extern.slf4j.Slf4j;
 

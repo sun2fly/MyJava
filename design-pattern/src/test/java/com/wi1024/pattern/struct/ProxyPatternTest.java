@@ -3,9 +3,14 @@ package com.wi1024.pattern.struct;
 import com.google.common.io.Files;
 
 import com.wi1024.pattern.TestBase;
+import com.wi1024.pattern.struct.proxy.CglibSubjectInterceptor;
 import com.wi1024.pattern.struct.proxy.ConcreteSubject;
 import com.wi1024.pattern.struct.proxy.ISubject;
 import com.wi1024.pattern.struct.proxy.JDKSubjectProxyHandler;
+import com.wi1024.pattern.struct.proxy.ProxySubject;
+
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.cglib.proxy.MethodInterceptor;
 
 import org.junit.Test;
 
@@ -44,7 +49,17 @@ public class ProxyPatternTest extends TestBase {
     @Test
     @Override
     public void exec() throws Exception {
+        log.info("========== JDK Proxy Start ==========");
         jdkProxy();
+        log.info("========== JDK Proxy End ==========");
+
+        log.info("========== Cglib Proxy Start ==========");
+        cglibProxy();
+        log.info("========== Cglib Proxy End ==========");
+
+        log.info("========== Static Proxy Start ==========");
+        staticProxy();
+        log.info("========== Static Proxy End ==========");
 
     }
 
@@ -56,7 +71,21 @@ public class ProxyPatternTest extends TestBase {
                         new Class[] {ISubject.class}, handler);
         subject.action();
         log.info("Proxy class name {}", subject.getClass().getName());
-        byte[] classFile = ProxyGenerator.generateProxyClass("$Proxy18", ConcreteSubject.class.getInterfaces());
-        Files.write(classFile, new File("$Proxy18.class"));
+        /*byte[] classFile = ProxyGenerator.generateProxyClass("$Proxy18", ConcreteSubject.class.getInterfaces());
+        Files.write(classFile, new File("$Proxy18.class"));*/
+    }
+
+    private void cglibProxy() throws Exception {
+        MethodInterceptor interceptor = new CglibSubjectInterceptor();
+        Enhancer enhancer = new Enhancer();
+        enhancer.setSuperclass(ConcreteSubject.class);
+        enhancer.setCallback(interceptor);
+        ISubject subject = (ISubject)enhancer.create();
+        subject.action();
+    }
+
+    private void staticProxy() throws Exception {
+        ISubject subject = new ProxySubject();
+        subject.action();
     }
 }
