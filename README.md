@@ -107,3 +107,5 @@
 
  > algorithm
    * Bloomfilter
+   * HASH算法
+   * 算法复杂度计算
