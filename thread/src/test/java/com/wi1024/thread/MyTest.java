@@ -1,12 +1,11 @@
 package com.wi1024.thread;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -22,10 +21,11 @@ public class MyTest extends TestBase {
     public void run() throws Exception {
         MyTask task = new MyTask();
         Thread thread = new Thread(task , "MyTask");
-        Thread thread1 = new MyThread("MyThread" , thread);
+        Thread thread1 = new MyThread("MyThread1" , thread);
+        Thread thread2 = new MyThread("MyThread2" , thread);
 
         thread1.start();
-        thread.start();
+        thread2.start();
 
     }
 

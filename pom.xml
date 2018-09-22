@@ -33,6 +33,7 @@
         <module>concurrent-framework</module>
         <module>common-lib</module>
         <module>design-pattern</module>
+        <module>language-tip</module>
     </modules>
 
 
@@ -94,6 +95,13 @@
                 <groupId>com.lmax</groupId>
                 <artifactId>disruptor</artifactId>
                 <version>3.3.7</version>
+            </dependency>
+
+            <!-- bytebuddy -->
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.8.0</version>
             </dependency>
 
 
