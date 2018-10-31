@@ -9,12 +9,13 @@ import java.util.Map;
 import java.util.Stack;
 
 /**
- * 获取对象占用内存大小
+ *
  * <p>
+ *     获取对象占用内存大小
  *     注意：此方法需要在agent模式下使用
  * </p>
  *
- * @author songfei@xbniao.com
+ * @author mrfsong@gmail.com
  * @create 2017/12/21 15:17
  **/
 public class MySizeOf {

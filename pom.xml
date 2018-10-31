@@ -28,12 +28,10 @@
 
     <modules>
         <module>message-service</module>
-        <module>thread</module>
         <module>data-structure</module>
         <module>concurrent-framework</module>
         <module>common-lib</module>
         <module>design-pattern</module>
-        <module>language-tip</module>
     </modules>
 
 
