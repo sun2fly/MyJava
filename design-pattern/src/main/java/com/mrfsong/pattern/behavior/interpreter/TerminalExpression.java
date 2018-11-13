@@ -1,0 +1,14 @@
+package com.mrfsong.pattern.behavior.interpreter;
+
+/**
+ * ${DESCRIPTION}
+ *
+ * @author lysongfei@gmail.com
+ * @create 02/01/2018 20:26
+ */
+public class TerminalExpression extends AbstractExpression {
+    @Override
+    public void interpret(Context context) {
+
+    }
+}
