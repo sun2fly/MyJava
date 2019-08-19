@@ -1,5 +1,6 @@
 package com.mrfsong.struct;
 
+import com.mrfsong.struct.sort.QuickSort;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -54,7 +55,7 @@ public class QuickSortTest {
 
         int[] arr = new int[]{9,1,5,0,10,3,2};
 
-        int last = arr.length - 1;
+     /*   int last = arr.length - 1;
         while(last > 0) {
             for(int i=0;i<last;i++){
                 if(arr[i] > arr[i+1]){
@@ -64,9 +65,12 @@ public class QuickSortTest {
                 }
             }
             last--;
-        }
+        }*/
 
+        QuickSort.sort(arr,0,arr.length-1);
         System.out.println(Arrays.toString(arr));
+
+
 
 
     }
