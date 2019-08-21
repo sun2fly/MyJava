@@ -1,6 +1,5 @@
-package com.mrfsong.struct;
+package com.mrfsong.struct.sort;
 
-import com.mrfsong.struct.sort.QuickSort;
 import org.junit.Test;
 
 import java.util.Arrays;
