@@ -23,6 +23,7 @@
     <properties>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j2.version>2.10.0</log4j2.version>
+        <spring.version>5.2.0.RELEASE</spring.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -32,6 +33,7 @@
         <module>concurrent-framework</module>
         <module>common-lib</module>
         <module>design-pattern</module>
+        <module>spring-framework</module>
     </modules>
 
 
@@ -101,6 +103,20 @@
                 <artifactId>byte-buddy</artifactId>
                 <version>1.8.0</version>
             </dependency>
+
+            <!-- Springframework -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${spring.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>2.2.0.RELEASE</version>
+            </dependency>
+
 
 
             <!-- test dependency -->
