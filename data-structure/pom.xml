@@ -67,6 +67,14 @@
             <artifactId>jmockdata</artifactId>
             <scope>test</scope>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>8.0.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <finalName>data-structure</finalName>
