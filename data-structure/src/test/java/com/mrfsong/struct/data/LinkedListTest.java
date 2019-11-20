@@ -68,20 +68,54 @@ public class LinkedListTest {
 
 
 
-    class Node {
-        private Integer num;
+    class Node<K> {
+
+
+        private K val;
+
+        /**
+         * 上个节点
+         */
+        private Node prev;
+
+        /**
+         * 下个节点
+         */
         private Node next;
 
-        public Node(Integer num) {
-            this.num = num;
+        /**
+         * 头结点
+         */
+        private Node header;
+
+        /**
+         * 尾节点
+         */
+        private Node tail;
+
+        /**
+         * 链表长度
+         */
+        private Integer size;
+
+        public Node(K val) {
+            this.val = val;
         }
 
-        public Integer getNum() {
-            return num;
+        public Node getPrev() {
+            return prev;
         }
 
-        public void setNum(Integer num) {
-            this.num = num;
+        public void setPrev(Node prev) {
+            this.prev = prev;
+        }
+
+        public K getVal() {
+            return val;
+        }
+
+        public void setVal(K val) {
+            this.val = val;
         }
 
         public Node getNext() {
@@ -92,12 +126,35 @@ public class LinkedListTest {
             this.next = next;
         }
 
+        public Node getHeader() {
+            return header;
+        }
+
+        public void setHeader(Node header) {
+            this.header = header;
+        }
+
+        public Node getTail() {
+            return tail;
+        }
+
+        public void setTail(Node tail) {
+            this.tail = tail;
+        }
+
+        public Integer getSize() {
+            return size;
+        }
+
+        public void setSize(Integer size) {
+            this.size = size;
+        }
 
         public String iterator () {
-            String output = String.valueOf(this.getNum());
+            String output = String.valueOf(this.getVal());
             Node header = this;
             while(header.getNext() != null){
-                output += header.getNext().getNum();
+                output += header.getNext().getVal();
                 header = header.next;
 
             }
