@@ -9,6 +9,7 @@ import org.openjdk.jol.info.ClassLayout;
 import org.openjdk.jol.info.GraphLayout;
 
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * <p>
@@ -39,6 +40,23 @@ public class ObjectTest {
 
 
 
+    }
+
+    @Test
+    public void testGoStatement() {
+        int num, i,sum=0;
+        go:{
+            Scanner data = new Scanner(System.in);
+            System.out.println("Enter a number");
+            num=data.nextInt();
+            for(i=0;i<100;i++)
+            {
+                sum=sum+i;
+                if(i==num)
+                    break go;
+            }
+        }
+        System.out.println("Sum of odd number:"+sum);
     }
 
 
