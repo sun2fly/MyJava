@@ -207,6 +207,63 @@ public class LeetCodeTest {
 
     }
 
+    /**
+     * [字符串遍历]判断数字是否为回文数
+     * (单数字默认为true)
+     * @param x
+     * @return
+     */
+    public boolean isPalindrome(int x) {
+
+        String str = String.valueOf(x);
+        int length = str.length();
+
+        if(length < 2){
+            return true;
+        }
+
+        boolean isEven = str.length() % 2 == 0 ? true : false; //判断长度为偶数还是奇数
+        int middle = (isEven) ? length / 2 : length / 2 + 1;
+        for(int i=0;i<middle;i++) {
+            if(str.charAt(i) != str.charAt(length-1-i)){
+                return false;
+            }
+        }
+
+        return true;
+
+    }
+
+    /**
+     * [数字计算]判断数字是否为回文数
+     * (单数字默认为true)
+     * @param x
+     * @return
+     */
+    public boolean isPalindrome2(int x) {
+
+        if(x < 0){
+            return false;
+        }
+
+        int reverse = 0;
+
+        int up = x,bit=0;
+
+        while(up != 0){
+            bit = up % 10;
+            up = up / 10;
+            reverse = reverse * 10 + bit;
+        }
+
+        if(reverse == x) {
+            return true;
+        }else {
+            return false;
+        }
+
+    }
+
 
     private boolean passCheck (char[] chs , int start  , int curr) {
 
