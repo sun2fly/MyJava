@@ -27,14 +27,19 @@ public class LeetCodeTest {
 //        double midVal = findMedianSortedArrays(new int[]{1,2} , new int[]{3,4});
 //        log.info("findMedianSortedArrays values : {}" , String.valueOf(midVal));
 
-        myAtoi("  -123&44 ");
+//        myAtoi("  -123&44 ");
         /*String s = "-012344";
         char[] chs = s.toCharArray();
         char[] tgt = new char[chs.length];
         System.arraycopy(chs, 0, tgt, 0, chs.length);*/
+        log.info(intToRoman(140));
     }
 
-
+    /**
+     * 最长不重复字符串
+     * @param s
+     * @return
+     */
     public  int lengthOfLongestSubstring03(String s) {
         int n = s.length(), ans = 0;
         //创建map窗口,i为左区间，j为右区间，右边界移动
@@ -265,23 +270,105 @@ public class LeetCodeTest {
     }
 
 
-    private boolean passCheck (char[] chs , int start  , int curr) {
+    /**
+     * 给定 n 个非负整数 a1，a2，...，an，每个数代表坐标中的一个点 (i, ai) 。在坐标内画 n 条垂直线，垂直线 i 的两个端点分别为 (i, ai) 和 (i, 0)。
+     * 找出其中的两条线，使得它们与 x 轴共同构成的容器可以容纳最多的水。
+     *
+     *
+     *
+     * @param height
+     * @return
+     */
+    public int maxArea(int[] height) {
+        //(1,a1) | (2,a2) | (3,a3) | (4,a4) .... (i,ai)
+        // (i,ai) | (j,aj)  ===> max((j-i) * min(ai,aj))
 
-        for(int i=start ; i<curr ;i++){
+        if(height.length < 3){
+            return 1 * Math.min(height[0],height[1]);
+        }
 
-            if(chs[i] == chs[curr]){
-                return false;
+
+        int maxArea = 0 ;
+        for(int i=0;i<height.length;i++){
+            for(int j = i+1 ; j < height.length;j++) {
+                int area = (j - i) * Math.min(height[j] , height[i]);
+                maxArea = (area > maxArea) ? area : maxArea;
+            }
+
+        }
+
+        log.info("Max area : {}" , maxArea);
+
+        return maxArea;
+    }
+
+    /**
+     * 整数转罗马数字
+     *
+     *
+     * 字符          数值
+     * I             1
+     * V             5
+     * X             10
+     * L             50
+     * C             100
+     * D             500
+     * M             1000
+     *
+     * 这个特殊的规则只适用于以下六种情况：
+     *
+     * I 可以放在 V (5) 和 X (10) 的左边，来表示 4 和 9。
+     * X 可以放在 L (50) 和 C (100) 的左边，来表示 40 和 90。 
+     * C 可以放在 D (500) 和 M (1000) 的左边，来表示 400 和 900。
+     *
+     * @param num
+     * @return
+     */
+    public String intToRoman(int num) {
+
+        if(num <= 0 || num > 3999){
+            return null;
+        }
+
+        // 判断目标区间 [1,5) [5,10) [10,50) [50,100) [100,500) [500,1000) [1000,4000)
+
+        // 分解组合    (1000 * a) + (500 * b) + (100 * c) + (50 * d) + (10 * e) + (5 * f) + (1 * g) = num
+
+
+        // 1000 -> 500 -> 100 -> 50 -> 10 -> 5 -> 1
+
+//        int[] base = new int[]{1000,500,100,50,10,5,1};
+        int[] base = new int[]{1000,900,500,400,100,90,50,40,10,9,5,4,1};
+        String[] romanChars = new String[]{"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+        int round = 0;      //取整
+        int remainder = 0; //取余
+
+        int tmp = num;
+        String result = "";
+        for(int i=0;i<base.length;i++) {
+            round = tmp / base[i];
+            tmp = tmp % base[i];
+
+            if(round > 0){
+                for(int repeat=1;repeat <= round ; repeat++){
+                    result += romanChars[i];
+                }
+            }
+
+            if(tmp == 0) {
+                break;
             }
         }
 
-        //循环至最后元素、仍未重复，则取最大长度
-        if(curr == chs.length - 1){
-            return false;
-        }
 
-        log.info("sub string ---> {}" , String.valueOf(chs,start , (curr-start + 1)));
+        // 判断特征值 4 / 9 / 40 / 90 / 400 / 900
 
-        return true;
+
+
+
+
+        return result;
     }
+
 
 }
