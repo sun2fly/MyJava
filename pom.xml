@@ -24,6 +24,7 @@
         <slf4j.version>1.7.25</slf4j.version>
         <log4j2.version>2.10.0</log4j2.version>
         <spring.version>5.2.0.RELEASE</spring.version>
+        <spring.boot.version>2.2.0.RELEASE</spring.boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -114,8 +115,16 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
-                <version>2.2.0.RELEASE</version>
+                <version>${spring.boot.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+
+
 
 
 
@@ -199,6 +208,39 @@
             </plugins>
         </pluginManagement>
     </build>
+
+
+    <repositories>
+        <repository>
+            <id>aliyun</id>
+            <name>aliyun public</name>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+            <layout>default</layout>
+            <!-- 是否开启发布版构件下载 -->
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <!-- 是否开启快照版构件下载 -->
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+
+        <pluginRepository>
+            <id>aliyun</id>
+            <name>aliyun public</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+        </pluginRepository>
+    </pluginRepositories>
 
 
 
