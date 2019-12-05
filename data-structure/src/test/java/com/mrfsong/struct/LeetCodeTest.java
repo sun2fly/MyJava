@@ -32,7 +32,8 @@ public class LeetCodeTest {
         char[] chs = s.toCharArray();
         char[] tgt = new char[chs.length];
         System.arraycopy(chs, 0, tgt, 0, chs.length);*/
-        log.info(intToRoman(140));
+//        log.info(intToRoman(140));
+        mergeSortedArray(new int[]{9,10,11,0,0,0},3,new int[]{2,5,6},3);
     }
 
     /**
@@ -368,6 +369,210 @@ public class LeetCodeTest {
 
 
         return result;
+    }
+
+    /**
+     * 罗马数字转数字
+     * @param s
+     * @return
+     */
+    public int romanToInt(String s) {
+        int[] base = new int[]{1000,900,500,400,100,90,50,40,10,9,5,4,1};
+        String[] romanChars = new String[]{"M","CM","D","CD","C","XC","L","XL","X","IX","V","IV","I"};
+
+
+        return 0;
+    }
+
+    /**
+     * 合并 k 个排序链表，返回合并后的排序链表
+     *
+     * WARN: 对象引用、交换
+     * TODO 内存不足
+     *
+     *
+     * @param lists
+     * @return
+     */
+    public ListNode mergeKLists(ListNode[] lists) {
+
+        if(lists == null || lists.length == 0) {
+            return null;
+        }
+
+        if(lists.length == 1){
+            return lists[0];
+        }
+
+
+        // 最终合并完成链表
+        ListNode finalNode = null;
+        for(int i=0;i<lists.length-1;i++) {
+
+            //依次比较、合并相邻链表
+            ListNode nextNode = null;
+            ListNode firstCmpNode = lists[i];
+            ListNode secondCmpNode = lists[++i];
+
+
+            // 循环结束条件：链表到尾元素
+            while(firstCmpNode != null && secondCmpNode != null) {
+
+                if(firstCmpNode.val < secondCmpNode.val){
+                    nextNode = firstCmpNode;
+                    firstCmpNode = firstCmpNode.next;
+                } else {
+                    nextNode = secondCmpNode;
+                    secondCmpNode = secondCmpNode.next;
+                }
+
+
+                if(finalNode == null){
+                    finalNode = nextNode;
+                }else {
+                    finalNode.next = nextNode;
+                }
+
+            }
+
+            //追加剩余节点
+            while(firstCmpNode !=null) {
+                finalNode.next = finalNode;
+                firstCmpNode = firstCmpNode.next;
+            }
+
+            while(secondCmpNode !=null) {
+                finalNode.next = secondCmpNode;
+                secondCmpNode = secondCmpNode.next;
+            }
+
+        }
+
+
+
+
+        return finalNode;
+    }
+
+
+    /**
+     *
+     * 给定两个有序整数数组 nums1 和 nums2，将 nums2 合并到 nums1 中，使得 num1 成为一个有序数组。
+     *
+     * 时间复杂度：O(m+n) 空间复杂度：O(m)
+     *
+     * 初始化 nums1 和 nums2 的元素数量分别为 m 和 n。
+     * 你可以假设 nums1 有足够的空间（空间大小大于或等于 m + n）来保存 nums2 中的元素。
+     *
+     * @param nums1
+     * @param m
+     * @param nums2
+     * @param n
+     */
+    public void mergeSortedArray(int[] nums1, int m, int[] nums2, int n) {
+
+        int[] arr = new int[m];
+        System.arraycopy(nums1,0,arr,0,m);
+
+        int idx = 0,idx2 = 0,position = 0;
+        while(idx < m && idx2 < n) {
+            nums1[position++] = (arr[idx] < nums2[idx2]) ? arr[idx++] : nums2[idx2++];
+        }
+
+        // nums2已经遍历完
+        if(idx < m) {
+            System.arraycopy(arr,idx,nums1,position,m-idx);
+        }
+
+        // arr已经遍历完
+        if(idx2 < n){
+            System.arraycopy(nums2,idx2,nums1,position,n-idx2);
+        }
+
+        log.info("Result : {}" , Arrays.toString(nums1));
+
+
+
+    }
+
+    /**
+     *
+     * 给定两个有序整数数组 nums1 和 nums2，将 nums2 合并到 nums1 中，使得 num1 成为一个有序数组。
+     *
+     * 时间复杂度：O(m+n) 空间复杂度：O(1)
+     *
+     * 初始化 nums1 和 nums2 的元素数量分别为 m 和 n。
+     * 你可以假设 nums1 有足够的空间（空间大小大于或等于 m + n）来保存 nums2 中的元素。
+     *
+     * @param nums1
+     * @param m
+     * @param nums2
+     * @param n
+     */
+    public void mergeSortedArray_Best(int[] nums1, int m, int[] nums2, int n) {
+
+        int p1 = m - 1;
+        int p2 = n - 1;
+        int p = m + n - 1;
+
+        while(p1 >=0 && p2 >= 0) {
+            nums1[p--] = (nums1[p1] > nums2[p2]) ? nums1[p1--] : nums2[p2--];
+        }
+
+        System.arraycopy(nums2,0,nums1,0,p2 + 1);
+
+
+
+        int[] arr = new int[m];
+        System.arraycopy(nums1,0,arr,0,m);
+
+        int idx = 0,idx2 = 0,position = 0;
+        while(idx < m && idx2 < n) {
+            nums1[position++] = (arr[idx] < nums2[idx2]) ? arr[idx++] : nums2[idx2++];
+        }
+
+        // nums2已经遍历完
+        if(idx < m) {
+            System.arraycopy(arr,idx,nums1,position,m-idx);
+        }
+
+        // arr已经遍历完
+        if(idx2 < n){
+            System.arraycopy(nums2,idx2,nums1,position,n-idx2);
+        }
+
+        log.info("Result : {}" , Arrays.toString(nums1));
+
+
+
+    }
+
+
+
+
+
+
+
+    class ListNode {
+        int val;
+        ListNode next;
+        ListNode(int x) { val = x; }
+
+        public int getVal() {
+            return val;
+        }
+
+        public void setVal(int val) {
+            this.val = val;
+        }
+
+        public ListNode getNext() {
+            return next;
+        }
+
+        public void setNext(ListNode next) {
+            this.next = next;
+        }
     }
 
 
