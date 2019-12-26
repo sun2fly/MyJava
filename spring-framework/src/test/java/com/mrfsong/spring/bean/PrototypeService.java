@@ -16,4 +16,11 @@ import org.springframework.stereotype.Component;
 @Component
 @Scope(value = "prototype")
 public class PrototypeService {
+
+
+    public String sayHello(String name) {
+        Integer.valueOf(name);
+        return "Prototype say : hi " + name;
+
+    }
 }

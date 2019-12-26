@@ -5,8 +5,6 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
-import org.openjdk.jol.info.ClassLayout;
-import org.openjdk.jol.info.GraphLayout;
 
 import java.util.List;
 import java.util.Scanner;
@@ -29,14 +27,17 @@ public class ObjectTest {
     public void testMethodParam() {
         String strValue = String.join(",",valList);
 
-        log.info("Internal of List : {}",ClassLayout.parseInstance(valList).toPrintable());
+        /*log.info("Internal of List : {}",ClassLayout.parseInstance(valList).toPrintable());
         log.info("Internal of String : {}",ClassLayout.parseInstance(strValue).toPrintable());
 
         log.info("External of List : {}",GraphLayout.parseInstance(valList).toPrintable());
         log.info("External of String : {}",GraphLayout.parseInstance(strValue).toPrintable());
 
         log.info("List total size :　{}",GraphLayout.parseInstance(valList).totalSize());
-        log.info("String total size : {}",GraphLayout.parseInstance(strValue).totalSize());
+        log.info("String total size : {}",GraphLayout.parseInstance(strValue).totalSize());*/
+        int h = 0;
+        int hash = (h = strValue.hashCode()) ^ (h >>> 16);
+        log.info("Hash: {}" , hash);
 
 
 
@@ -58,6 +59,9 @@ public class ObjectTest {
         }
         System.out.println("Sum of odd number:"+sum);
     }
+
+
+
 
 
 

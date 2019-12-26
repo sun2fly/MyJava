@@ -1,7 +1,6 @@
 package com.mrfsong.spring.bean;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,7 +17,11 @@ public class UserService {
 
 
 
+    public String sayHello(String name) {
 
+        return "UserService say : hi " + name;
+
+    }
 
 
 
