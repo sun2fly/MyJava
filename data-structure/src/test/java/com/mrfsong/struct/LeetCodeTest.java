@@ -33,7 +33,9 @@ public class LeetCodeTest {
         char[] tgt = new char[chs.length];
         System.arraycopy(chs, 0, tgt, 0, chs.length);*/
 //        log.info(intToRoman(140));
-        mergeSortedArray(new int[]{9,10,11,0,0,0},3,new int[]{2,5,6},3);
+//        mergeSortedArray(new int[]{9,10,11,0,0,0},3,new int[]{2,5,6},3);
+        log.info("climbStairs values : {}" , String.valueOf(climbStairs(5)));
+
     }
 
     /**
@@ -545,6 +547,40 @@ public class LeetCodeTest {
 
 
 
+    }
+
+
+    public int climbStairs(int n) {
+
+        // [x,y]   (x * 1) + (y * 2) = n
+        // [x,y] 多少种组合方式
+
+
+        int maxStep2 = n / 2; // [0,maxStep2]
+
+        int x , y = 0;
+
+        int count = 0;
+        for(x = 0;x <= maxStep2;x++){
+
+            y = (n - 2 * x);
+
+            log.info("[x,y] -> [{},{}]" , x , y);
+
+            if(x == 0 || y == 0) {
+                count++;
+            } else {
+                // A(x+y,x+y) 排列、组合
+                // TODO 包含重复元素的排列、组合
+                int a_xy = 1;
+                for(int idx = 1 ;idx <= (x + y) ;idx++) {
+                    a_xy *= idx;
+                }
+                count += a_xy;
+            }
+        }
+
+        return count;
     }
 
 
