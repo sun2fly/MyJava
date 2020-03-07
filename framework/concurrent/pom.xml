@@ -1,17 +1,20 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>m-java</artifactId>
+        <artifactId>framework</artifactId>
         <groupId>com.mrfsong</groupId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>data-structure</artifactId>
-    <name>data-structure module</name>
-    <description>Data structure by Java </description>
 
+    <artifactId>concurrent-framework</artifactId>
+    <packaging>jar</packaging>
+
+    <name>concurrent-framework</name>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <profiles>
         <profile>
@@ -36,11 +39,25 @@
     </profiles>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.lmax</groupId>
+            <artifactId>disruptor</artifactId>
+        </dependency>
+
+        <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <!-- jodd library -->
+        <dependency>
+            <groupId>org.jodd</groupId>
+            <artifactId>jodd-all</artifactId>
+        </dependency>
+
+        <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -63,28 +80,10 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.github.jsonzou</groupId>
-            <artifactId>jmockdata</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>8.0.0</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.openjdk.jol</groupId>
-            <artifactId>jol-core</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
     <build>
-        <finalName>data-structure</finalName>
+        <finalName>concurrent-framework</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
