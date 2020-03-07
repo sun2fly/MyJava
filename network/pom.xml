@@ -2,15 +2,14 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mrfsong</groupId>
-    <artifactId>message-service</artifactId>
+    <artifactId>network</artifactId>
     <version>1.0.0</version>
     <name>framework</name>
     <description>java framework</description>
     <packaging>pom</packaging>
 
-
     <modules>
-        <module>rabbitmq</module>
+        <module>http</module>
     </modules>
 
     <dependencyManagement>

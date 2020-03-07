@@ -9,6 +9,11 @@
     <url>http://maven.apache.org</url>
     <packaging>pom</packaging>
 
+    <modules>
+        <module>concurrent</module>
+        <module>spring</module>
+    </modules>
+
 
     <dependencyManagement>
         <dependencies>
