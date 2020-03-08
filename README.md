@@ -50,8 +50,9 @@
 
  > Netty & Actor
    * zero copy
-   1. mmap
-   2. sendfile
+   1. Memory Mapped Files(mmap)
+   2. Direct Memory Access(DMA)
+   3. Sendfile
 
  > MyBatis
 
