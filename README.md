@@ -19,9 +19,9 @@
 
  > data struct
 
-   ![Collection](resources/image/collection.png)
+   ![Collection](static/image/collection.png)
 
-   ![Map](resources/image/map.png)
+   ![Map](static/image/map.png)
 
    * heap , stack , map , collections , tree , SkipList , Graph
 
@@ -45,7 +45,7 @@
 
  > Concurrent framework
    * LMAX Disruptor
-        ![disruptor](resources/image/disruptor.png)
+        ![disruptor](static/image/disruptor.png)
 
 
  > Netty & Actor
@@ -72,7 +72,7 @@
    3. Repeatable read (Innodb Default)
    4. Serializable
 
-   ![Map](resources/image/mysql-transaction.png)
+   ![Map](static/image/mysql-transaction.png)
 
    * lock
    1. 行级锁定
