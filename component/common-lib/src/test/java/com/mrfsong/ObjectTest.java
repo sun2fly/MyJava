@@ -3,6 +3,7 @@ package com.mrfsong;
 import com.github.jsonzou.jmockdata.JMockData;
 import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
+import com.google.common.hash.BloomFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
@@ -127,6 +128,12 @@ public class ObjectTest {
         Date date = new Date();
         log.info("Date.getTime:{}" , date.getTime());
         log.info("System.currentMills:{}" , Long.MAX_VALUE);
+
+    }
+
+    @Test
+    public void testBloomFilter(){
+        BloomFilter<String> dealIdBloomFilter ;
 
     }
 
