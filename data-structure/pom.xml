@@ -5,11 +5,12 @@
         <version>1.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+
     <modelVersion>4.0.0</modelVersion>
     <artifactId>data-structure</artifactId>
     <name>data-structure module</name>
     <description>Data structure by Java </description>
-    <url>http://maven.apache.org</url>
 
 
     <profiles>

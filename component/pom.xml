@@ -2,16 +2,13 @@
 
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.mrfsong</groupId>
-    <artifactId>message-service</artifactId>
+    <artifactId>component</artifactId>
     <version>1.0.0</version>
-    <name>framework</name>
-    <description>java framework</description>
+    <name>component</name>
+    <description>java component</description>
+    <url>http://maven.apache.org</url>
     <packaging>pom</packaging>
 
-
-    <modules>
-        <module>rabbitmq</module>
-    </modules>
 
     <dependencyManagement>
         <dependencies>

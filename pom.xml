@@ -6,17 +6,17 @@
     <artifactId>m-java</artifactId>
     <version>1.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <url>https://mrfsong.github.io/</url>
 
     <scm>
-        <url>https://github.com/sun2fly/MyJava</url>
-        <developerConnection>scm:git:https://github.com/sun2fly/MyJava</developerConnection>
+        <url>https://github.com/mrfsong/MyJava</url>
+        <developerConnection>scm:git:https://github.com/mrfsong/MyJava</developerConnection>
     </scm>
 
     <developers>
         <developer>
             <name>mrfsong</name>
             <email>mrfsong@gmail.com</email>
-            <organization>wi1024.com</organization>
         </developer>
     </developers>
 
@@ -28,16 +28,6 @@
         <aspectj.version>1.9.5</aspectj.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
-    <modules>
-        <module>message-service</module>
-        <module>data-structure</module>
-        <module>concurrent-framework</module>
-        <module>common-lib</module>
-        <module>design-pattern</module>
-        <module>spring-framework</module>
-    </modules>
-
 
     <dependencyManagement>
         <dependencies>
@@ -229,7 +219,7 @@
         <repository>
             <id>aliyun</id>
             <name>aliyun public</name>
-            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+            <url>https://maven.aliyun.com/repository/public</url>
             <layout>default</layout>
             <!-- 是否开启发布版构件下载 -->
             <releases>
@@ -253,7 +243,7 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
-            <url>http://maven.aliyun.com/nexus/content/groups/public</url>
+            <url>https://maven.aliyun.com/repository/public</url>
         </pluginRepository>
     </pluginRepositories>
 

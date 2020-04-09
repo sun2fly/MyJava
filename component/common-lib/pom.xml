@@ -1,14 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>message-service</artifactId>
+        <artifactId>component</artifactId>
         <groupId>com.mrfsong</groupId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>rabbitmq</artifactId>
+    <artifactId>common-lib</artifactId>
+    <packaging>jar</packaging>
+
+    <name>common-lib</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
 
     <profiles>
         <profile>
@@ -33,18 +41,12 @@
     </profiles>
 
     <dependencies>
-
-        <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>5.0.0</version>
-        </dependency>
-
+        <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-
+        <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -68,10 +70,23 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.jsonzou</groupId>
+            <artifactId>jmockdata</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
     <build>
+        <finalName>common-lib</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -97,6 +112,4 @@
             </testResource>
         </testResources>
     </build>
-
-
 </project>

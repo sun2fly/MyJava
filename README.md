@@ -19,9 +19,9 @@
 
  > data struct
 
-   ![Collection](image/collection.png)
+   ![Collection](resources/image/collection.png)
 
-   ![Map](image/map.png)
+   ![Map](resources/image/map.png)
 
    * heap , stack , map , collections , tree , SkipList , Graph
 
@@ -45,10 +45,14 @@
 
  > Concurrent framework
    * LMAX Disruptor
-        ![disruptor](image/disruptor.png)
+        ![disruptor](resources/image/disruptor.png)
 
 
  > Netty & Actor
+   * zero copy
+   1. Memory Mapped Files(mmap)
+   2. Direct Memory Access(DMA)
+   3. Sendfile
 
  > MyBatis
 
@@ -68,7 +72,7 @@
    3. Repeatable read (Innodb Default)
    4. Serializable
 
-   ![Map](image/mysql-transaction.png)
+   ![Map](resources/image/mysql-transaction.png)
 
    * lock
    1. 行级锁定
