@@ -20,4 +20,15 @@ public class ObjectTest {
         int maxBit = Integer.MAX_VALUE % 10;
         log.info("Max bit :{} , Min bit : {}" , maxBit ,minBit);
     }
+
+    @Test
+    public void testShift(){
+
+        int capacity = 10;
+        int shiftR = (capacity >> 1);
+        int shiftL = (capacity << 1);
+        log.info("shifL：{}" ,shiftL);
+        log.info("shiftR：{}" ,shiftR);
+
+    }
 }
