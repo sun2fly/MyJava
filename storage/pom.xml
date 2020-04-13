@@ -10,6 +10,7 @@
 
     <modules>
         <module>rocksdb</module>
+        <module>h2db</module>
     </modules>
 
     <dependencyManagement>
@@ -28,6 +29,14 @@
                 <artifactId>rocksdbjni</artifactId>
                 <version>6.7.3</version>
             </dependency>
+
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>1.4.200</version>
+                <scope>test</scope>
+            </dependency>
+
 
         </dependencies>
     </dependencyManagement>

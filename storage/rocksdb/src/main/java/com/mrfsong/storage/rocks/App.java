@@ -1,5 +1,9 @@
 package com.mrfsong.storage.rocks;
 
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
+
 /**
  * Hello world!
  *
@@ -7,22 +11,20 @@ package com.mrfsong.storage.rocks;
 public class App 
 {
     static {
-
+        RocksDB.loadLibrary();
         System.out.println("============ Hey , I'm static block  ============");
 
     }
 
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
-        synchronized (App.class) {
-            while (true) {
-                try {
-                    App.class.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+        try (final Options options = new Options().setCreateIfMissing(true)) {
+
+            try (final RocksDB db = RocksDB.open(options, "../db/test")) {
+
             }
+        } catch (RocksDBException e) {
+            // do some error handling
         }
 
     }
