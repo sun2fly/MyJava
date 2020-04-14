@@ -85,6 +85,10 @@ public class RocksDBSample {
 
       options.setRateLimiter(rateLimiter);
 
+      //WAL文件清理策略
+      options.setWalTtlSeconds(60 * 1L);
+      options.setWalSizeLimitMB(100L);
+
       final BlockBasedTableConfig table_options = new BlockBasedTableConfig();
       table_options.setBlockCacheSize(64 * SizeUnit.KB)
           .setFilter(bloomFilter)
@@ -94,7 +98,21 @@ public class RocksDBSample {
           .setCacheIndexAndFilterBlocks(true)
           .setHashIndexAllowCollision(false)
           .setBlockCacheCompressedSize(64 * SizeUnit.KB)
-          .setBlockCacheCompressedNumShardBits(10);
+          .setBlockCacheCompressedNumShardBits(10)
+      ;
+
+
+      SstFileManager sstFileManager = null;
+      try {
+        //设置sst文件可使用最大磁盘空间大小
+        sstFileManager = new SstFileManager(Env.getDefault());
+        sstFileManager.setMaxAllowedSpaceUsage(1024 * 1024 * 1024 * 10);//unit:byte
+        options.setSstFileManager(sstFileManager);
+      } catch (RocksDBException e) {
+        e.printStackTrace();
+      }
+
+
 
       assert (table_options.blockCacheSize() == 64 * SizeUnit.KB);
       assert (table_options.cacheNumShardBits() == 6);
