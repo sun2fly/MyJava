@@ -114,6 +114,8 @@ public class RocksDBSample {
 
 
 
+
+
       assert (table_options.blockCacheSize() == 64 * SizeUnit.KB);
       assert (table_options.cacheNumShardBits() == 6);
       assert (table_options.blockSizeDeviation() == 5);
@@ -125,6 +127,20 @@ public class RocksDBSample {
 
       options.setTableFormatConfig(table_options);
       assert (options.tableFactoryName().equals("BlockBasedTable"));
+
+
+      //checkpoint操作
+      try (final RocksDB db = RocksDB.open(options, db_path)) {
+        try (final Checkpoint checkpoint = Checkpoint.create(db)) {
+          checkpoint.createCheckpoint(db_path + "/snapshot1");
+          db.put("key2".getBytes(), "value2".getBytes());
+          checkpoint.createCheckpoint(db_path + "/snapshot2");
+        }
+      }catch (RocksDBException e){
+
+      }
+
+
 
       try (final RocksDB db = RocksDB.open(options, db_path)) {
         db.put("hello".getBytes(), "world".getBytes());
