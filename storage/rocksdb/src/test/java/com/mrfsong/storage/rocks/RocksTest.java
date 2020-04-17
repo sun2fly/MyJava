@@ -31,7 +31,7 @@ public class RocksTest {
 
 
     private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb\\test";
-    private static final String ROCKS_DB_COLUMN_FAMILY = "test";
+    private static final String ROCKS_DB_COLUMN_FAMILY = "my_cf";
 
 
     public String getCurrDateTimeFormat() {
@@ -42,18 +42,64 @@ public class RocksTest {
     @Before
     public void resetDB() {
         log.warn("==================== Begin to reset rocksdb ==========");
-        //清除数据
-        try (final Options options = new Options()) {
-            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
-                ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-                ColumnFamilyDescriptor defaultCfDescriptor = new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY,columnFamilyOptions);
-                ColumnFamilyDescriptor testCfDescriptor = new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(),columnFamilyOptions);
-                List<ColumnFamilyHandle> columnFamilies = db.createColumnFamilies(Arrays.asList(defaultCfDescriptor, testCfDescriptor));
-                db.dropColumnFamilies(columnFamilies);
+
+        // todo 此处需要open数据库所有的column family ??? 如果是那就太恶心了！！！
+        final List<ColumnFamilyDescriptor> cfDescriptors = Arrays.asList(
+                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
+                new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes()),
+                new ColumnFamilyDescriptor("test".getBytes()));
+        final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
+
+        try (final DBOptions options = new DBOptions()
+                .setCreateIfMissing(true)
+                .setCreateMissingColumnFamilies(true);
+             final RocksDB db = RocksDB.open(options,
+                     ROCKS_DB_PATH, cfDescriptors,
+                     columnFamilyHandleList)) {
+
+            ColumnFamilyHandle columnFamilyHandle = null;
+            try {
+
+                /*for(ColumnFamilyHandle columnFamilyHandle : columnFamilyHandleList){
+                    if(!Arrays.equals(columnFamilyHandle.getDescriptor().getName(),RocksDB.DEFAULT_COLUMN_FAMILY)){
+                        db.dropColumnFamily(columnFamilyHandle);
+                    }
+
+
+                }*/
+
+                columnFamilyHandle = db.createColumnFamily(
+                        new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(),
+                                new ColumnFamilyOptions()));
+                db.dropColumnFamily(columnFamilyHandle);
+            } finally {
+
+                if (columnFamilyHandle != null) {
+                    columnFamilyHandle.close();
+                }
+
+                for (ColumnFamilyHandle cfHandle : columnFamilyHandleList) {
+                    cfHandle.close();
+                }
             }
+
         }catch (RocksDBException e) {
             e.printStackTrace();
         }
+
+        //清除数据
+        /*try (final Options options = new Options()) {
+            options.setCreateIfMissing(true);
+            options.setCreateMissingColumnFamilies(true);
+            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
+                ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+                ColumnFamilyDescriptor testCfDescriptor = new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(),columnFamilyOptions);
+                ColumnFamilyHandle columnFamily = db.createColumnFamily(testCfDescriptor);
+                db.dropColumnFamily(columnFamily);
+            }
+        }catch (RocksDBException e) {
+            e.printStackTrace();
+        }*/
 
         log.warn("==================== Finish to reset rocksdb ==========");
     }
@@ -199,6 +245,18 @@ public class RocksTest {
     @Test
     public void testColumnF(){
 
+        //遍历所有CF
+        try(final Options options = new Options().setCreateIfMissing(true)){
+            final List<byte[]> columnFamilyNames = RocksDB.listColumnFamilies(options,ROCKS_DB_PATH);
+            for(byte[] cfByte : columnFamilyNames){
+                log.info("CF -> {}" , new String(cfByte));
+            }
+
+        }catch (RocksDBException e) {
+
+        }
+
+
         final List<ColumnFamilyDescriptor> cfNames = Arrays.asList(
                 new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
                 new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
@@ -211,6 +269,8 @@ public class RocksTest {
             dbOptions.setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
             dbOptions.setMaxLogFileSize(1024 * 1024 * 10);
             //do other ...... //
+
+
 
 
             try(final RocksDB cfDb = RocksDB.open(dbOptions,ROCKS_DB_PATH,cfNames,columnFamilyHandleList)){
@@ -236,7 +296,7 @@ public class RocksTest {
                     columnFamilyHandle.close();
                 }
             }
-        }catch (RocksDBException e) {
+        }catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -247,6 +307,8 @@ public class RocksTest {
     @Test
     public void testDelRange() {
         try (final Options options = new Options()) {
+            options.setCreateIfMissing(true);
+            options.setCreateMissingColumnFamilies(true);
             try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
                 Slice start = new Slice("hello");
                 Slice end = new Slice("bye");

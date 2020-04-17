@@ -10,7 +10,8 @@ import java.util.UUID;
 
 /**
  * <p>
- * rocksdb测试
+ *      h2db测试
+ *      TODO: Memory mode
  * </P>
  *
  * @Author songfei20
