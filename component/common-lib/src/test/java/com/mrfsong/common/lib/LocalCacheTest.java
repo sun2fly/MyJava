@@ -1,4 +1,4 @@
-package com.mrfsong;
+package com.mrfsong.common.lib;
 
 import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;

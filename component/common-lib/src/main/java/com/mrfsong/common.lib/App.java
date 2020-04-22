@@ -1,4 +1,4 @@
-package com.mrfsong.common;
+package com.mrfsong.common.lib;
 
 /**
  * Hello world!

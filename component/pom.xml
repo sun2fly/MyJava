@@ -21,6 +21,37 @@
             </dependency>
 
             <!-- other dependencies -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>druid</artifactId>
+                <version>1.1.22</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>3.1</version>
+            </dependency>
+
+
+            <!--Apache calcite-->
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-core</artifactId>
+                <version>1.22.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-druid</artifactId>
+                <version>1.22.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.calcite</groupId>
+                <artifactId>calcite-linq4j</artifactId>
+                <version>1.22.0</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

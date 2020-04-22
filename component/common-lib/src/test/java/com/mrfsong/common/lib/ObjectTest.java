@@ -1,4 +1,4 @@
-package com.mrfsong;
+package com.mrfsong.common.lib;
 
 import com.github.jsonzou.jmockdata.JMockData;
 import com.github.jsonzou.jmockdata.MockConfig;
