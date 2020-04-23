@@ -1,7 +1,6 @@
 package com.mrfsong.storage.rocks;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Before;
 import org.junit.Test;
 import org.rocksdb.*;
 
@@ -11,8 +10,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * <p>
@@ -30,8 +30,8 @@ public class RocksTest {
     }
 
 
-    private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb\\test";
-    private static final String ROCKS_DB_COLUMN_FAMILY = "my_cf";
+    private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb\\%s";
+    private static final String ROCKS_DB_COLUMN_FAMILY = "TEST_C_F";
 
 
     public String getCurrDateTimeFormat() {
@@ -39,15 +39,15 @@ public class RocksTest {
         return now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 
-    @Before
+//    @Before
     public void resetDB() {
         log.warn("==================== Begin to reset rocksdb ==========");
 
         // todo 此处需要open数据库所有的column family ??? 如果是那就太恶心了！！！
         final List<ColumnFamilyDescriptor> cfDescriptors = Arrays.asList(
-                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
-                new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes()),
-                new ColumnFamilyDescriptor("test".getBytes()));
+//                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
+                new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
+        );
         final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
 
         try (final DBOptions options = new DBOptions()
@@ -105,7 +105,7 @@ public class RocksTest {
     }
 
     @Test
-    public void testBaseAPI() {
+    public void basicAPI() {
 
         try (final Options options = new Options()) {
 
@@ -137,40 +137,113 @@ public class RocksTest {
             /**============================== RocksDB Configuration End ==============================*/
 
             // a factory method that returns a RocksDB instance
-
-            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
+            String path = String.format(ROCKS_DB_PATH,"test");
+            try (final RocksDB db = RocksDB.open(options, path)) {
                 ColumnFamilyHandle columnFamily = db.createColumnFamily(testCfDescriptor);
                 byte[] bytes = db.get(columnFamily,"hello".getBytes());
                 if(bytes == null){
                     db.put(columnFamily,"hello".getBytes(),"rocksdb".getBytes());
                 }
                 db.delete(columnFamily,"hello".getBytes());
+                TimeUnit.SECONDS.sleep(10);
             }
 
-            //checkpoint操作
-            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
+        } catch (Exception e) {
+            // do some error handling
+            fail(e.getMessage());
+        }
+
+
+
+
+    }
+
+    @Test
+    public void doCheckpoint() {
+        //checkpoint操作
+        try (final Options options = new Options()) {
+
+            /**============================== RocksDB Configuration Begin ==============================*/
+            options.setCreateIfMissing(true);
+            options.setCreateMissingColumnFamilies(true);
+
+            //列族设置
+            /*ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+            columnFamilyOptions.setNumLevels(3);
+            columnFamilyOptions.setCompressionType(CompressionType.LZ4_COMPRESSION);
+            columnFamilyOptions.setBloomLocality(10);
+            columnFamilyOptions.setArenaBlockSize(1024 * 1024 * 100);//todo 100M?
+
+            ColumnFamilyDescriptor testCfDescriptor = new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(), columnFamilyOptions);*/
+
+
+            //SstFile配置
+            try (SstFileManager sstFileManager = new SstFileManager(Env.getDefault())) {
+                //设置sst文件可使用最大磁盘空间大小
+                sstFileManager.setMaxAllowedSpaceUsage(1024 * 1024 * 10);//unit:byte
+                options.setSstFileManager(sstFileManager);
+            }
+
+            //WAL文件清理策略
+            options.setWalTtlSeconds(60 * 1L);
+            options.setWalSizeLimitMB(100L);
+            String ckpPath = String.format(ROCKS_DB_PATH,"ckp");
+            try (final RocksDB db = RocksDB.open(options, ckpPath)) {
                 String timeSuffix = getCurrDateTimeFormat();
 
                 //【WARN】checkpoint目录必须预先创建
-                File snapDir = new File(ROCKS_DB_PATH + File.separator + timeSuffix);
-                if(!snapDir.exists()){
+                File snapDir = new File(ckpPath + File.separator + timeSuffix);
+                if (!snapDir.exists()) {
                     snapDir.mkdirs();
                 }
 
                 try (final Checkpoint checkpoint = Checkpoint.create(db)) {
-                    checkpoint.createCheckpoint(ROCKS_DB_PATH + File.separator + timeSuffix + File.separator + "snapshot1");
+                    checkpoint.createCheckpoint(ckpPath + File.separator + timeSuffix + File.separator + "snapshot1");
                     db.put("key1".getBytes(), "value1".getBytes());
-                    checkpoint.createCheckpoint(ROCKS_DB_PATH + File.separator + timeSuffix + File.separator + "snapshot2");
+                    checkpoint.createCheckpoint(ckpPath + File.separator + timeSuffix + File.separator + "snapshot2");
                 }
             }
+        }catch (RocksDBException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void doSnapshot(){
+        try (final Options options = new Options()) {
+
+            /**============================== RocksDB Configuration Begin ==============================*/
+            options.setCreateIfMissing(true);
+            options.setCreateMissingColumnFamilies(true);
+
+            //列族设置
+            /*ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+            columnFamilyOptions.setNumLevels(3);
+            columnFamilyOptions.setCompressionType(CompressionType.LZ4_COMPRESSION);
+            columnFamilyOptions.setBloomLocality(10);
+            columnFamilyOptions.setArenaBlockSize(1024 * 1024 * 100);//todo 100M?
+
+            ColumnFamilyDescriptor testCfDescriptor = new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(), columnFamilyOptions);*/
+
+
+            //SstFile配置
+            try (SstFileManager sstFileManager = new SstFileManager(Env.getDefault())) {
+                //设置sst文件可使用最大磁盘空间大小
+                sstFileManager.setMaxAllowedSpaceUsage(1024 * 1024 * 10);//unit:byte
+                options.setSstFileManager(sstFileManager);
+            }
+
+            //WAL文件清理策略
+            options.setWalTtlSeconds(60 * 1L);
+            options.setWalSizeLimitMB(100L);
 
             //snapshot操作
-            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
-                db.put("key2".getBytes(), "value2".getBytes());
-                try (final RocksIterator iterator = db.newIterator(db.getDefaultColumnFamily())){
+            try (final RocksDB db = RocksDB.open(options, String.format(ROCKS_DB_PATH,"snap"))) {
+                db.put("key".getBytes(), "value".getBytes());
+                try (final RocksIterator iterator = db.newIterator()) {
 
                     //遍历CF数据
-                    for(iterator.seekToFirst();iterator.isValid();iterator.next()){
+                    for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                         log.info(new String(iterator.key()) + ":" + new String(iterator.value()));
                     }
                     iterator.status();
@@ -190,7 +263,7 @@ public class RocksTest {
                     assertFalse(iterator.isValid());*/
                 }
 
-
+                db.put("key2".getBytes(), "value2".getBytes());
                 final Snapshot snapshot = db.getSnapshot();
                 final ReadOptions readOptions = new ReadOptions().setSnapshot(snapshot);
                 try (final RocksIterator snapshotIterator = db.newIterator(db.getDefaultColumnFamily(), readOptions)) {
@@ -200,45 +273,56 @@ public class RocksTest {
                     snapshotIterator.next();
                     assertFalse(snapshotIterator.isValid());*/
 
-                    for(snapshotIterator.seekToFirst();snapshotIterator.isValid();snapshotIterator.next()){
+                    for (snapshotIterator.seekToFirst(); snapshotIterator.isValid(); snapshotIterator.next()) {
                         log.info(new String(snapshotIterator.key()) + ":" + new String(snapshotIterator.value()));
                     }
 
+
+
+                }finally {
                     // release Snapshot
                     db.releaseSnapshot(snapshot);
-
                 }
 
             }
-
-
-
-
-
-
-
-        } catch (RocksDBException e) {
-            // do some error handling
+        }catch (RocksDBException e) {
             fail(e.getMessage());
-            e.printStackTrace();
         }
-
-
-
 
     }
 
     @Test
-    public void testTtl(){
+    public void testTtlDB(){
 
-        try (final Options options = new Options();final TtlDB ttlDB = TtlDB.open(options, ROCKS_DB_PATH)) {
-
+        try (final Options options = new Options()){
             options.setCreateIfMissing(true).setMaxCompactionBytes(0);
-            options.setTtl(1_000L * 60 * 1);
-            options.setWalTtlSeconds(60L * 5);
+            /*options.setTtl(1_000L * 60 * 1);
+            options.setWalTtlSeconds(60L * 5);*/
+            String ttlDbPath = String.format(ROCKS_DB_PATH,"ttl");
 
-        }catch (RocksDBException e){
-            e.printStackTrace();
+            //ttl单位：second
+            try(final TtlDB ttlDB = TtlDB.open(options,ttlDbPath,1,false);){
+                ttlDB.put("ttlKey".getBytes(),"value".getBytes());
+                TimeUnit.SECONDS.sleep(2);
+                //手工触发compact
+                ttlDB.compactRange();
+                byte[] bytes = ttlDB.get("ttlKey".getBytes());
+                assertNull(bytes);
+            }
+
+
+            try(final TtlDB ttlDB = TtlDB.open(options,ttlDbPath,60,false);){
+                ttlDB.put("ttlKey2".getBytes(),"value".getBytes());
+            }
+
+            try(final RocksDB db = RocksDB.open(options, ttlDbPath)){
+                byte[] bytes = db.get("ttlKey2".getBytes());
+                assertNotNull(bytes);
+                log.info(new String(bytes));
+            }
+
+        } catch (Exception e) {
+            fail(e.getMessage());
         }
     }
 
@@ -323,4 +407,9 @@ public class RocksTest {
         }
 
     }
+
+    /**
+     * 获取所有Column Family
+     */
+    private void getAllColumnFamily() {}
 }
