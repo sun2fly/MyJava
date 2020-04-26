@@ -134,6 +134,13 @@ public class RocksTest {
             options.setWalTtlSeconds(60 * 1L);
             options.setWalSizeLimitMB(100L);
 
+
+            //设置memtable大小
+            options.setWriteBufferSize(1024 * 1024 * 128);
+
+            WriteBufferManager writeBufferManager = new WriteBufferManager(1024 * 1024 * 128 , new LRUCache(100));//配置mmtable使用最大内存
+            options.setWriteBufferManager(writeBufferManager);
+
             /**============================== RocksDB Configuration End ==============================*/
 
             // a factory method that returns a RocksDB instance
@@ -145,6 +152,7 @@ public class RocksTest {
                     db.put(columnFamily,"hello".getBytes(),"rocksdb".getBytes());
                 }
                 db.delete(columnFamily,"hello".getBytes());
+
                 TimeUnit.SECONDS.sleep(10);
             }
 

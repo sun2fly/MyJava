@@ -27,9 +27,9 @@ public class LocalCacheTest {
     @Test
     public void testGuavaCache() throws Exception{
 
-        int size = 1000000;
+        int size = 100;
         LoadingCache<String, String> localCache = CacheBuilder.newBuilder()
-                .initialCapacity(1000)
+                .initialCapacity(10)
                 .maximumSize(size)
                 .concurrencyLevel(3)
                 .recordStats()
@@ -39,14 +39,15 @@ public class LocalCacheTest {
                     //默认的数据加载实现,当调用get取值的时候,如果key没有对应的值,就调用这个方法进行加载
                     @Override
                     public String load(String key) throws Exception {
-                        log.warn("key:[{}] not exists , begin to loading ...");
+                        log.warn("key:[{}] not exists , begin to loading ..." , key);
                         return "initVal_" + (System.currentTimeMillis());
                     }
                 });
 
 
-
-        String val = localCache.get("123");
+        String val = localCache.getIfPresent("123");
+        Assert.assertNull(val);
+        val = localCache.get("123");
         log.info("val ======> {}" , val);
         Assert.assertFalse(Strings.isNullOrEmpty(val));
 
@@ -57,7 +58,7 @@ public class LocalCacheTest {
         log.warn("finish init {} element ......" , size);
         log.warn("total size : {}", GraphLayout.parseInstance(localCache).totalSize());
 
-        Thread.sleep(1000 * 60 * 5L);
+//        Thread.sleep(1000 * 60 * 5L);
 
         /*log.info("Internal of List : {}", ClassLayout.parseInstance(valList).toPrintable());
         log.info("Internal of String : {}",ClassLayout.parseInstance(strValue).toPrintable());
