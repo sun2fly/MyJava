@@ -30,8 +30,14 @@ public class RocksTest {
     }
 
 
-    private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb\\%s";
-    private static final String ROCKS_DB_COLUMN_FAMILY = "TEST_C_F";
+    private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb";
+    private static final String ROCKS_DB_COLUMN_FAMILY = "TEST_CF";
+
+
+
+
+
+
 
 
     public String getCurrDateTimeFormat() {
@@ -43,9 +49,9 @@ public class RocksTest {
     public void resetDB() {
         log.warn("==================== Begin to reset rocksdb ==========");
 
-        // todo 此处需要open数据库所有的column family ??? 如果是那就太恶心了！！！
+        // 已经验证，需要open数据库所有的column family ，就是这么恶心的用法 !!!  2020/4/27
         final List<ColumnFamilyDescriptor> cfDescriptors = Arrays.asList(
-//                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
+                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
                 new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
         );
         final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
@@ -335,27 +341,31 @@ public class RocksTest {
     }
 
     @Test
-    public void testColumnF(){
+    public void testColumnFamily(){
 
         //遍历所有CF
         try(final Options options = new Options().setCreateIfMissing(true)){
             final List<byte[]> columnFamilyNames = RocksDB.listColumnFamilies(options,ROCKS_DB_PATH);
             for(byte[] cfByte : columnFamilyNames){
-                log.info("CF -> {}" , new String(cfByte));
+                log.warn("list column family -> {}" , new String(cfByte));
             }
 
         }catch (RocksDBException e) {
 
         }
 
+        //列族配置
+        ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
+//        columnFamilyOptions.setCompressionType(CompressionType.BZLIB2_COMPRESSION);
+
 
         final List<ColumnFamilyDescriptor> cfNames = Arrays.asList(
                 new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
-                new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
+                new ColumnFamilyDescriptor("T_CF_1".getBytes(),columnFamilyOptions),
+                new ColumnFamilyDescriptor("T_CF_2".getBytes(),columnFamilyOptions)
         );
 
         final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
-
 
         try (final DBOptions dbOptions = new DBOptions()){
             dbOptions.setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
@@ -365,15 +375,25 @@ public class RocksTest {
 
 
 
-            try(final RocksDB cfDb = RocksDB.open(dbOptions,ROCKS_DB_PATH,cfNames,columnFamilyHandleList)){
+            try(final RocksDB rocksDB = RocksDB.open(dbOptions,ROCKS_DB_PATH,cfNames,columnFamilyHandleList)){
 
                 //未指定cf时更新
-                cfDb.put("dfkey1".getBytes(), "dfvalue".getBytes());//不指定则使用默认CF
-                cfDb.put(columnFamilyHandleList.get(0), "dfkey2".getBytes(),"dfvalue".getBytes());
-                cfDb.put(columnFamilyHandleList.get(1), "newcfkey1".getBytes(),"newcfvalue".getBytes());
+                /*rocksDB.put("dfkey1".getBytes(), "dfvalue".getBytes());//不指定则使用默认CF
+                rocksDB.put(columnFamilyHandleList.get(0), "dfkey2".getBytes(),"dfvalue".getBytes());
+                rocksDB.put(columnFamilyHandleList.get(1), "newcfkey1".getBytes(),"newcfvalue".getBytes());*/
+
+                byte[] cf1Bytes = rocksDB.get(columnFamilyHandleList.get(1), "test_key_1".getBytes());
+                byte[] cf2Bytes = rocksDB.get(columnFamilyHandleList.get(2), "test_key_1".getBytes());
+                log.info("value from cf1 : {}" , new String(cf1Bytes));
+                log.info("value from cf2 : {}" , new String(cf2Bytes));
+
+
+                rocksDB.put(columnFamilyHandleList.get(1), "test_key_1".getBytes(),"test_key_1".getBytes());
+                rocksDB.put(columnFamilyHandleList.get(2), "test_key_1".getBytes(),"test_key_2".getBytes());
+
 
                 //iterator
-                List<RocksIterator> cfIterators = cfDb.newIterators(columnFamilyHandleList);
+                List<RocksIterator> cfIterators = rocksDB.newIterators(columnFamilyHandleList);
                 for(RocksIterator iter : cfIterators){
                     iter.seekToFirst();
                     while (iter.isValid()) {
@@ -397,7 +417,37 @@ public class RocksTest {
     }
 
     @Test
-    public void testDelRange() {
+    public void testMerge() {
+
+
+       /* final List<ColumnFamilyDescriptor> cfNames = Arrays.asList(
+                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
+                new ColumnFamilyDescriptor("T_CF_1".getBytes()),
+                new ColumnFamilyDescriptor("T_CF_2".getBytes())
+        );
+
+        final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();*/
+
+        try (final Options dbOptions = new Options()) {
+            dbOptions.setCreateIfMissing(true);
+            dbOptions.setMaxLogFileSize(1024 * 1024 * 10);
+            dbOptions.setMergeOperator(new StringAppendOperator());
+            try(final RocksDB rocksDB = RocksDB.open(dbOptions,ROCKS_DB_PATH)){
+                rocksDB.put("TEST_MERGE_KEY".getBytes() , "1".getBytes());
+
+                rocksDB.merge("TEST_MERGE_KEY".getBytes(),"2".getBytes());
+
+                byte[] valBytes = rocksDB.get("TEST_MERGE_KEY".getBytes());
+
+                log.info(new String(valBytes));
+            }
+        }catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeleteByRange() {
         try (final Options options = new Options()) {
             options.setCreateIfMissing(true);
             options.setCreateMissingColumnFamilies(true);
@@ -416,8 +466,4 @@ public class RocksTest {
 
     }
 
-    /**
-     * 获取所有Column Family
-     */
-    private void getAllColumnFamily() {}
 }

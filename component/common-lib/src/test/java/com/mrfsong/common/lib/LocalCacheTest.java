@@ -33,7 +33,36 @@ public class LocalCacheTest {
                 .maximumSize(size)
                 .concurrencyLevel(3)
                 .recordStats()
-                .removalListener((RemovalListener<String, String>) notification -> log.warn("key:[{}] is removed ...",notification.getKey()))
+                .removalListener((RemovalListener<String, String>) notification -> {
+                    log.warn("key:[{}] is removed ...",notification.getKey());
+
+
+                    switch (notification.getCause()) {
+                        //The entry was manually removed by the user
+                        case EXPLICIT:
+                            break;
+
+                        //The entry itself was not actually removed, but its value was replaced by the user
+                        case REPLACED:
+                            break;
+
+                        //The entry was removed automatically because its key or value was garbage-collected
+                        case COLLECTED:
+                            break;
+
+                        //The entry's expiration timestamp has passed
+                        case EXPIRED:
+                            break;
+
+                        //The entry was evicted due to size constraints
+                        case SIZE:
+                            break;
+
+                        default:
+                            break;
+
+                    }
+                })
                 .expireAfterWrite(30, TimeUnit.MINUTES)
                 .build(new CacheLoader<String, String>() {
                     //默认的数据加载实现,当调用get取值的时候,如果key没有对应的值,就调用这个方法进行加载
