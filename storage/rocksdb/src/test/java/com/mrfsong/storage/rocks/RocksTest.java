@@ -1,5 +1,7 @@
 package com.mrfsong.storage.rocks;
 
+import com.mrfsong.storage.rocks.serialize.JavaSerializer;
+import com.mrfsong.storage.rocks.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.rocksdb.*;
@@ -32,13 +34,6 @@ public class RocksTest {
 
     private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb";
     private static final String ROCKS_DB_COLUMN_FAMILY = "TEST_CF";
-
-
-
-
-
-
-
 
     public String getCurrDateTimeFormat() {
         LocalDateTime now = LocalDateTime.now();
@@ -466,4 +461,44 @@ public class RocksTest {
 
     }
 
+
+    @Test
+    public void testEntity(){
+        User user = new User("zsan",30);
+        Serializer<User> serializer = new JavaSerializer<>();
+        try(final Options options = new Options()){
+            options.setCreateIfMissing(true);
+
+            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
+                byte[] keyBytes = serializer.serialize(user);
+                byte[] valBytes = serializer.serialize(user);
+
+                db.put(keyBytes,valBytes);
+                valBytes = db.get(keyBytes);
+                if(valBytes != null && valBytes.length > 0){
+                    User user1 = serializer.deSerialize(valBytes);
+                    log.info(user1.toString());
+                }
+
+
+                user = new User("zsan",30);
+                keyBytes = serializer.serialize(user);
+                valBytes = db.get(keyBytes);
+                if(valBytes != null && valBytes.length > 0){
+                    User user2 = serializer.deSerialize(valBytes);
+                    log.info(user2.toString());
+                }
+
+
+
+
+            }
+        }catch (Exception e) {
+            fail(e.getMessage());
+        }
+
+
+
+
+    }
 }

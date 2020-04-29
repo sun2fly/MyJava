@@ -130,8 +130,24 @@
             </dependency>
 
 
+            <!-- serialize dependency -->
+            <dependency>
+                <groupId>com.esotericsoftware</groupId>
+                <artifactId>kryo</artifactId>
+                <version>4.0.1</version>
+            </dependency>
 
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>3.11.4</version>
+            </dependency>
 
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>1.9.2</version>
+            </dependency>
 
             <!-- test dependency -->
             <dependency>
@@ -149,6 +165,14 @@
             </dependency>
 
             <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>3.3.3</version>
+                <scope>test</scope>
+            </dependency>
+
+
+            <dependency>
                 <groupId>org.openjdk.jol</groupId>
                 <artifactId>jol-core</artifactId>
                 <version>0.9</version>
@@ -161,8 +185,6 @@
                 <version>${spring.version}</version>
                 <scope>test</scope>
             </dependency>
-
-
 
         </dependencies>
 
