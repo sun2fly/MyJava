@@ -76,7 +76,7 @@
 
         <dependency>
             <groupId>com.esotericsoftware</groupId>
-            <artifactId>kryo</artifactId>
+            <artifactId>kryo-shaded</artifactId>
         </dependency>
 
         <dependency>
@@ -98,11 +98,10 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml</groupId>
-            <artifactId>classmate</artifactId>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
             <scope>test</scope>
         </dependency>
-
 
     </dependencies>
 
