@@ -137,6 +137,24 @@ public class ObjectTest {
 
     }
 
+    @Test
+    public void testStringReplace(){
+
+        String str = "a::1,b::2,c::3,d::4";
+
+        //replace(char,char)方法底层使用的字符串匹配
+        String replaceChar = str.replace(':', '=');
+
+        //replace(charSequence,charSequence)方法底层使用的字符串匹配
+        String replaceCharSequence = str.replace("::", "=");
+
+        //replaceAll方法底层使用的正则表达式
+        String replaceAll = str.replaceAll("::", "=");
+        log.info("replace === > {}" , replaceChar);
+        log.info("replaceAll === > {}" , replaceAll);
+
+    }
+
 
 
 
