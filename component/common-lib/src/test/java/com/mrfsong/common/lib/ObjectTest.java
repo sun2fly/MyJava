@@ -155,6 +155,15 @@ public class ObjectTest {
 
     }
 
+    @Test
+    public void testProcessBuilder() throws Exception {
+        ProcessBuilder proc = new ProcessBuilder();
+        proc.command("notepad.exe","testfile");
+        Process process = proc.start();
+        int resultVal = process.waitFor();
+        log.info("Result val : " + resultVal);
+    }
+
 
 
 
