@@ -1,4 +1,4 @@
-package com.mrfsong.serialize.util;
+package com.mrfsong.common.lib.util;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;

@@ -157,11 +157,18 @@ public class ObjectTest {
 
     @Test
     public void testProcessBuilder() throws Exception {
+
+        //ProcessBuilder用法
         ProcessBuilder proc = new ProcessBuilder();
         proc.command("notepad.exe","testfile");
         Process process = proc.start();
         int resultVal = process.waitFor();
         log.info("Result val : " + resultVal);
+
+        //Process用法
+        Process execProcess = Runtime.getRuntime().exec("notepad.exe testfile");
+        int execRtValue = execProcess.waitFor();
+        log.info("Result val : " + execRtValue);
     }
 
 
