@@ -10,6 +10,11 @@
     <packaging>pom</packaging>
 
 
+    <modules>
+        <module>common-lib</module>
+        <module>sql-parser</module>
+    </modules>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
