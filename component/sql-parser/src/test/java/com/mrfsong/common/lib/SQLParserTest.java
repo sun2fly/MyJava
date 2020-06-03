@@ -5,7 +5,9 @@ import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
-import net.sf.jsqlparser.expression.operators.relational.ComparisonOperator;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -15,7 +17,9 @@ import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>
@@ -28,7 +32,7 @@ import java.util.List;
 @Slf4j
 public class SQLParserTest {
 
-    private static final String SQL = "select wrl.id from waybill_route_link wrl left join waybill_info wi on wrl.waybill_code = wi.waybill_code where wrl.update_time >= '2020-05-01 00:00:00' and wrl.create_time >= '2020-04-05 00:00:00' and wrl.yn = 1 and wrl.waybill_code like 'JD%'group by wrl.waybill_code order by wrl.update_time desc";
+    private static final String SQL = "select wrl.id from waybill_route_link wrl left join waybill_info wi on wrl.waybill_code = wi.waybill_code where wrl.create_time <= '2020-04-15 00:00:00' and wrl.create_time >= '2020-04-05 00:00:00' and wrl.update_time >= '2020-05-01 00:00:00' and wrl.yn = 1 and wrl.waybill_code like 'JD%' and wrl.id in (1234,2345) and (wrl.status between 1 and 2) group by wrl.waybill_code order by wrl.update_time desc";
 
 
     @Test
@@ -57,15 +61,77 @@ public class SQLParserTest {
 
             /* 解析WHERE条件 */
             Expression where = plainSelect.getWhere();
+
             where.accept(new ExpressionVisitorAdapter() {
 
                 @Override
                 protected void visitBinaryExpression(BinaryExpression expr) {
+                    log.info("BinaryExpression ===> {}" ,expr.toString());
                     if (expr instanceof ComparisonOperator) {
                         log.info("Cond column:[{}] , operator:[{}] , value:[{}]" , expr.getLeftExpression() , expr.getStringExpression() , expr.getRightExpression());
                     }
 
                     super.visitBinaryExpression(expr);
+                }
+
+                @Override
+                public void visit(AndExpression expr) {
+                    log.info("AndExpression ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(OrExpression expr) {
+                    log.info("AndExpression ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(GreaterThan expr) {
+                    log.info("GreaterThan ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(GreaterThanEquals expr) {
+                    log.info("GreaterThan ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(MinorThan expr) {
+                    log.info("MinorThan ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(MinorThanEquals expr) {
+                    log.info("MinorThanEquals ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(Between expr) {
+                    log.info("Between ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(InExpression expr) {
+                    log.info("InExpression ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(LikeExpression expr) {
+                    log.info("LikeExpression ===> {}" ,expr.toString());
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(EqualsTo expr) {
+                    log.info("EqualsTo ===> {}" ,expr.toString());
+                    super.visit(expr);
                 }
             });
 
@@ -109,6 +175,154 @@ public class SQLParserTest {
 
     }
 
+    @Test
+    public void explainWhere() throws JSQLParserException {
+        Statement statement = CCJSqlParserUtil.parse(SQL);
+        Select select = (Select)statement;
 
+        PlainSelect plainSelect = (PlainSelect) select.getSelectBody();
+        Expression where = plainSelect.getWhere();
+
+        where.accept(new ExpressionVisitorAdapter() {
+
+            @Override
+            protected void visitBinaryExpression(BinaryExpression expr) {
+                log.info(expr.toString());
+                if (expr instanceof ComparisonOperator) {
+                    log.info("Cond column:[{}] , operator:[{}] , value:[{}]" , expr.getLeftExpression() , expr.getStringExpression() , expr.getRightExpression());
+                }
+
+                super.visitBinaryExpression(expr);
+            }
+
+            /*@Override
+            public void visit(AndExpression expr) {
+                log.info("AndExpression ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(OrExpression expr) {
+                log.info("OrExpression ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(GreaterThan expr) {
+                log.info("GreaterThan ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(GreaterThanEquals expr) {
+                log.info("GreaterThan ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(MinorThan expr) {
+                log.info("MinorThan ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(MinorThanEquals expr) {
+                log.info("MinorThanEquals ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(Between expr) {
+                log.info("Between ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(InExpression expr) {
+                log.info("InExpression ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(LikeExpression expr) {
+                log.info("LikeExpression ===> {}" ,expr.toString());
+                super.visit(expr);
+            }
+
+            @Override
+            public void visit(EqualsTo expr) {
+                log.info("EqualsTo ===> {}" ,expr.toString());
+                super.visit(expr);
+            }*/
+        });
+    }
+
+    @Test
+    public void parseWhere() throws  JSQLParserException {
+        Map<String,String> condValMap = new HashMap<>();
+        Expression expression = CCJSqlParserUtil.parseCondExpression("yun = 1 and (create_time <= '2020-04-15 00:00:00' and create_time >= '2020-04-05 00:00:00') and id in (1,2,3,4,5)");
+        if(expression != null){
+
+            expression.accept(new ExpressionVisitorAdapter() {
+
+                @Override
+                public void visit(AndExpression expr) {
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(OrExpression expr) {
+                    throw new RuntimeException("Or expression have not supported !");
+                }
+
+                @Override
+                public void visit(GreaterThan expr) {
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? expr.getRightExpression().toString(): v.concat("|").concat(expr.getRightExpression().toString()));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(GreaterThanEquals expr) {
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? expr.getRightExpression().toString(): v.concat("|").concat(expr.getRightExpression().toString()));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(MinorThan expr) {
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? expr.getRightExpression().toString(): v.concat("|").concat(expr.getRightExpression().toString()));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(MinorThanEquals expr) {
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? expr.getRightExpression().toString(): v.concat("|").concat(expr.getRightExpression().toString()));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(Between expr) {
+                    String value = String.join("|", expr.getBetweenExpressionStart().toString(), expr.getBetweenExpressionEnd().toString());
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ?  value : v.concat("|").concat(value));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(InExpression expr) {
+                    String value = expr.getRightItemsList().toString();
+                    String trimValue = value.substring(1,value.length()-1);
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? trimValue : v.concat("|".concat(trimValue)));
+                    super.visit(expr);
+                }
+
+                @Override
+                public void visit(LikeExpression expr) {
+                    condValMap.compute(expr.getLeftExpression().toString(), (k, v) -> (v == null) ? expr.getRightExpression().toString(): v.concat(",").concat(expr.getRightExpression().toString()));
+                    super.visit(expr);
+                }
+            });
+
+            condValMap.entrySet().forEach(entry -> log.info("key: " + entry.getKey() + " value: " + entry.getValue()));
+        }
+    }
 
 }

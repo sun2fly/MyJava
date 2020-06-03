@@ -9,6 +9,8 @@ import org.junit.Test;
 
 import java.io.InputStream;
 import java.sql.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 /**
@@ -21,6 +23,8 @@ import java.util.Properties;
  */
 @Slf4j
 public class JdbcTest {
+
+    private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     Properties dbProperties;
 
@@ -36,6 +40,78 @@ public class JdbcTest {
 
     @After
     public void destory() {}
+
+    @Test
+    public void query() {
+
+        Connection conn = null;
+        ResultSet resultSet = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","root","root");
+            //获取表索引（非主键）
+            PreparedStatement preparedStatement = conn.prepareStatement("select * from index_test");
+            resultSet = preparedStatement.executeQuery();
+            while(resultSet.next()) {
+                Timestamp createTime = resultSet.getTimestamp("create_time");
+                Timestamp updateTime = resultSet.getTimestamp("update_time");
+
+                String create_time_ymd = resultSet.getString("create_time");
+                String update_time_ymd = resultSet.getString("update_time");
+
+                boolean status = resultSet.getBoolean("status");
+                byte sex = resultSet.getByte("sex");
+                log.info("ResultSet : {}" , resultSet.toString());
+            }
+
+            LocalDateTime localDateTime = LocalDateTime.now();
+            log.info("Now: {}",localDateTime.format(DATE_FORMATTER));
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(resultSet != null) {
+                try {
+                    resultSet.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+    @Test
+    public void showMagic() {
+
+        String sql = "select table_rows from information_schema.tables where table_name='index_test' and table_schema='dcomb'";
+        Connection conn = null;
+        ResultSet resultSet = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","repl","mysql57");
+            //获取表索引（非主键）
+            PreparedStatement preparedStatement = conn.prepareStatement(sql);
+            resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()) {
+                long aLong = resultSet.getLong(1);
+                log.info("Table count : {}" , aLong);
+            }
+
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(resultSet != null) {
+                try {
+                    resultSet.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
 
     @Test
     public void example() {
@@ -187,9 +263,9 @@ public class JdbcTest {
                 /**
                  * 索引类型
                  * 0：tableIndexStatistic - this identifies table statistics that are returned in conjuction with a table's index descriptions
-                 * 1：tableIndexClustered - this is a clustered index
-                 * 2：tableIndexHashed - this is a hashed index
-                 * 3：tableIndexOther - this is some other style of index
+                 * 1：tableIndexClustered - this is a clustered index        ===> 聚集索引
+                 * 2：tableIndexHashed - this is a hashed index              ===> Hash索引
+                 * 3：tableIndexOther - this is some other style of index    ===> B+树索引
                  */
                 short indexType = resultSet.getShort("TYPE");
 
