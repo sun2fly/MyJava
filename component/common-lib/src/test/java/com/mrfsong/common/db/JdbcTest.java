@@ -2,6 +2,7 @@ package com.mrfsong.common.db;
 
 import com.github.jsonzou.jmockdata.MockConfig;
 import com.google.common.base.Stopwatch;
+import com.mrfsong.common.util.DateUtil;
 import com.mrfsong.common.util.Printer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -19,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.LongStream;
 
 import static com.github.jsonzou.jmockdata.JMockData.mock;
 
@@ -490,7 +492,7 @@ public class JdbcTest {
 
 
     @Test(timeout=30000)
-    public void testDatePartitionNew(){
+    public void testDatePartitionTwo(){
 
 
         //计时器
@@ -573,6 +575,102 @@ public class JdbcTest {
         }
     }
 
+
+    @Test(timeout=300000)
+    public void testDatePartitionThree(){
+
+
+        //计时器
+        Stopwatch stopwatch = Stopwatch.createStarted();
+
+        Long batchSize = 1000000L;
+        Connection conn = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        //目前分片值保留了日期查询字段，实际情况可能会包括其他非日期索引查询字段，所以可以做以下假设：
+        //1: 单日期分片数据 * rand(0 ~ 1] = batchSize
+        //2: 当只存在分片日期查询条件时，该值为1；当存在其他条件时，该值 大于 1，具体应用中需要通过识别Where条件来决定取值
+        double partitionScaleRatio = 1.0d;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
+            statement = conn.createStatement();
+
+            //TODO 此处如果存在查询效率瓶颈，可以先获取min(date),max(date) ，然后拆分为天，分别统计每天的min/max/count量 （假定：单天数据量不能过大 ！！！）
+            resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00' and create_time < '2020-06-11 00:00:00'");
+
+            Timestamp minDate = null;
+            Timestamp maxDate = null;
+            while(resultSet.next()){
+                minDate = resultSet.getTimestamp(1);
+                maxDate = resultSet.getTimestamp(2);
+            }
+            resultSet.close();
+
+            List<Range<Timestamp>> rangeList = subDateResult(DateUtil.formatTs(minDate,DATE_FORMATTER), DateUtil.formatTs(maxDate,DATE_FORMATTER), conn);
+
+            //数据结构： 2N: minDate 2N+1: maxDate
+            List<Timestamp> gDateList = new ArrayList<>();//分组min/max日期列表，步长为2
+            //数据结构： N: count
+            List<Long> gRowCountList = new ArrayList<>();
+
+            rangeList.forEach(rng -> {
+                gDateList.add(rng.getMin());
+                gDateList.add(rng.getMax());
+                gRowCountList.add(rng.getCount());
+            });
+
+
+            //检测大分片
+            int start = 0 ,index = 0;
+            long partitionScaleSize = Math.round(batchSize * partitionScaleRatio);//分片记录放大值
+            Map<Integer,Integer> dateIndexMap = new HashMap<>();//"小"分片日期数据区间
+
+            List<Integer> bigPartDateIndex = new ArrayList<>();
+            for(Long cnt : gRowCountList){
+                if(cnt > partitionScaleSize){
+                    dateIndexMap.put(start, index);
+                    start = index ;
+                    bigPartDateIndex.add(index * 2);
+                }
+                index++;
+            }
+
+            //拆分大分片
+            for(Integer idx : bigPartDateIndex){
+                double bigFactor = gRowCountList.get(idx / 2) / partitionScaleSize * 1.0D;
+                //拆分单天
+                long hourSplitTotal = Math.round(24 / bigFactor);
+                LocalDateTime[] arr = getOneMaxDayRange(gDateList.get(idx+1));//max值
+                Map<LocalDateTime, LocalDateTime> splitDateMap = partitionByDateInteval(arr[0], arr[1], hourSplitTotal, ChronoUnit.HOURS);
+                splitDateMap.entrySet().stream().forEach(entry -> log.warn("[Bigger Partition] start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
+
+            }
+
+            //合并小分片（切记要剔除大分片的时间段）
+            for(Map.Entry<Integer,Integer> entry : dateIndexMap.entrySet()){
+                List<Long> subList = gRowCountList.subList(entry.getKey(),entry.getValue());
+                doMergeParition(subList,gDateList,partitionScaleSize);
+            }
+
+            log.info("处理完成，耗时 [{}]", stopwatch);
+
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(statement != null) {
+                try {
+                    resultSet.close();
+                    statement.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
     private String getUUID() {
         return UUID.randomUUID().toString().replaceAll("-","").toLowerCase();
     }
@@ -580,7 +678,7 @@ public class JdbcTest {
 
     private Map<LocalDateTime,LocalDateTime> partitionByDateInteval(LocalDateTime minDateTime, LocalDateTime maxDateTime, long step , ChronoUnit dateInteval ) {
 
-        Map<LocalDateTime,LocalDateTime> splitResult = new HashMap<>();
+        Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
         long differ = dateInteval.between(minDateTime, maxDateTime);
         long offset = differ / step == 0 ? differ / step : (differ / step) + 1;
         LocalDateTime tmpDateTime = minDateTime;
@@ -591,7 +689,7 @@ public class JdbcTest {
                 plusDateTime = maxDateTime;
             }
             splitResult.put(tmpDateTime, plusDateTime);
-            log.warn("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
+            log.debug("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
             tmpDateTime = plusDateTime;
         }
 
@@ -599,25 +697,21 @@ public class JdbcTest {
 
     }
 
-    private Map<LocalDateTime,LocalDateTime> partitionByDateInteval(Timestamp minTs, Timestamp maxTs, long step, ChronoUnit dateInteval) {
-
-        Map<LocalDateTime,LocalDateTime> splitResult = new HashMap<>();
-
-        LocalDateTime minDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(minTs.getTime()), ZoneId.systemDefault());
-        LocalDateTime maxDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(minTs.getTime()), ZoneId.systemDefault());
-        long differ = dateInteval.between(minDateTime, maxDateTime);
-        long offset = differ / step == 0 ? differ / step : (differ / step) + 1;
-        LocalDateTime tmpDateTime = minDateTime;
-
-        for(long postition = 0; postition <= offset;postition++){
-            LocalDateTime plusDateTime = tmpDateTime.plus(step,dateInteval);
-            if(postition == offset){
-                plusDateTime = maxDateTime;
+    private Map<LocalDateTime,LocalDateTime> partitionByDay(LocalDateTime minDateTime, LocalDateTime maxDateTime) {
+        Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
+        long differ = ChronoUnit.DAYS.between(minDateTime, maxDateTime);
+        LongStream.range(0,differ+1).forEach(idx -> {
+            if(idx == 0 ) {
+                splitResult.put(minDateTime, LocalDateTime.of(minDateTime.toLocalDate(), LocalTime.MAX));
+            }else if(idx == differ) {
+                splitResult.put(LocalDateTime.of(maxDateTime.toLocalDate(), LocalTime.MIN).plusSeconds(1L),maxDateTime);
+            } else {
+                LocalDateTime plusDateTime = minDateTime.plusDays(idx);
+                splitResult.put(LocalDateTime.of(plusDateTime.toLocalDate(), LocalTime.MIN),LocalDateTime.of(plusDateTime.plusDays(1).toLocalDate(), LocalTime.MIN));
             }
-            log.warn("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
-            splitResult.put(tmpDateTime, plusDateTime);
-            tmpDateTime = plusDateTime;
-        }
+        });
+
+
         return splitResult;
     }
 
@@ -697,6 +791,7 @@ public class JdbcTest {
 
     /**
      * 日期查询条件拆分
+     * TODO 优化点：并发查询
      * @param begin
      * @param end
      * @param conn
@@ -707,10 +802,10 @@ public class JdbcTest {
         LocalDateTime dateTimeEnd = LocalDateTime.parse(end, DATE_FORMATTER);
 
         List<Range<Timestamp>> gDateList = new ArrayList<>();
-        Map<LocalDateTime, LocalDateTime> dateSplitResult = partitionByDateInteval(dateTimeStart, dateTimeEnd, 1, ChronoUnit.DAYS);
+        Map<LocalDateTime, LocalDateTime> dateSplitResult = partitionByDay(dateTimeStart, dateTimeEnd);
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time < ? GROUP BY year(create_time),MONTH(create_time),DAY(create_time)";
+        String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time < ?";
         try{
             for(Map.Entry<LocalDateTime, LocalDateTime> entry : dateSplitResult.entrySet()){
                 statement = conn.prepareStatement(sql);
