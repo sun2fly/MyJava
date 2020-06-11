@@ -1,8 +1,8 @@
-package com.mrfsong.common.lib.db;
+package com.mrfsong.common.db;
 
 import com.github.jsonzou.jmockdata.MockConfig;
 import com.google.common.base.Stopwatch;
-import com.mrfsong.common.lib.util.Printer;
+import com.mrfsong.common.util.Printer;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;

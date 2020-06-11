@@ -1,4 +1,4 @@
-package com.mrfsong.common.lib;
+package com.mrfsong.common;
 
 import junit.framework.Test;
 import junit.framework.TestCase;

@@ -1,4 +1,4 @@
-package com.mrfsong.common.lib;
+package com.mrfsong.common;
 
 /**
  * <p>

@@ -1,4 +1,4 @@
-package com.mrfsong.common.lib.util;
+package com.mrfsong.common.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

@@ -1,4 +1,4 @@
-package com.mrfsong.common.lib.iter;
+package com.mrfsong.common.iter;
 
 import java.util.Objects;
 import java.util.function.BiConsumer;

@@ -1,6 +1,6 @@
-package com.mrfsong.common.lib;
+package com.mrfsong.common;
 
-import com.mrfsong.common.lib.iter.Iterables;
+import com.mrfsong.common.iter.Iterables;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.openjdk.jol.info.ClassLayout;

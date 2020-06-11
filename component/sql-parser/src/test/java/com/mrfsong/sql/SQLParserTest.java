@@ -1,4 +1,4 @@
-package com.mrfsong.common.lib;
+package com.mrfsong.sql;
 
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.JSQLParserException;
