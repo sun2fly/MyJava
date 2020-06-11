@@ -5,6 +5,7 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
 import com.google.common.hash.BloomFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Date;
@@ -134,6 +135,10 @@ public class ObjectTest {
     @Test
     public void testBloomFilter(){
         BloomFilter<String> dealIdBloomFilter ;
+
+        Object obj1 = "123";
+        Object obj2 = new String("123");
+        Assert.assertEquals(obj1.toString(),obj2.toString());
 
     }
 

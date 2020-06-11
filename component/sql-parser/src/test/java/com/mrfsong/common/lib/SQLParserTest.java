@@ -260,7 +260,7 @@ public class SQLParserTest {
     @Test
     public void parseWhere() throws  JSQLParserException {
         Map<String,String> condValMap = new HashMap<>();
-        Expression expression = CCJSqlParserUtil.parseCondExpression("yun = 1 and (create_time <= '2020-04-15 00:00:00' and create_time >= '2020-04-05 00:00:00') and id in (1,2,3,4,5)");
+        Expression expression = CCJSqlParserUtil.parseCondExpression("yn = 1 and (create_time <= '2020-04-15 00:00:00' and create_time >= '2020-04-05 00:00:00') and id in (1,2,3,4,5)");
         if(expression != null){
 
             expression.accept(new ExpressionVisitorAdapter() {

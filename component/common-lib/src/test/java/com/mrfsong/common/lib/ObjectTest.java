@@ -3,10 +3,13 @@ package com.mrfsong.common.lib;
 import com.github.jsonzou.jmockdata.JMockData;
 import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
+import com.google.common.collect.Lists;
 import com.google.common.hash.BloomFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
@@ -21,6 +24,12 @@ import java.util.Scanner;
  */
 @Slf4j
 public class ObjectTest {
+
+
+    /**
+     * 日期Formatter
+     */
+    private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final List<String> valList = JMockData.mock(new TypeReference<List<String>>(){},new MockConfig().sizeRange(100, 100));
 
@@ -132,6 +141,22 @@ public class ObjectTest {
     }
 
     @Test
+    public void testDateTime () {
+        LocalDateTime startTime = LocalDateTime.parse("2020-03-01 01:00:00", DATE_FORMATTER);
+        LocalDateTime endTime = LocalDateTime.parse("2020-06-02 00:00:00", DATE_FORMATTER);
+
+        /*long hours = ChronoUnit.HOURS.between(startTime, endTime);
+        long halfDays = ChronoUnit.HALF_DAYS.between(startTime, endTime);
+        long days = ChronoUnit.DAYS.between(startTime, endTime);
+        long months = ChronoUnit.MONTHS.between(startTime, endTime);
+        long years = ChronoUnit.YEARS.between(startTime, endTime);
+
+        log.info("hours:{} , halfDays:{} , days:{} , months:{} , years:{}" , hours,halfDays,days,months,years);*/
+
+
+    }
+
+    @Test
     public void testBloomFilter(){
         BloomFilter<String> dealIdBloomFilter ;
 
@@ -170,6 +195,19 @@ public class ObjectTest {
         int execRtValue = execProcess.waitFor();
         log.info("Result val : " + execRtValue);
     }
+
+    @Test
+    public void testSubList() {
+        List<String> list = Lists.newArrayList("1","2","3","4","5","6","7");
+        List<String> subList = list.subList(0, 2);
+        subList.forEach(o -> log.info(o));
+
+        for(;;){
+            log.info("" + Math.random());
+        }
+    }
+
+
 
 
 
