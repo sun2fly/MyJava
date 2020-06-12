@@ -25,5 +25,16 @@ public class DateUtil {
         return dateTime.format(dateTimeFormatter);
     }
 
+    public static Timestamp parse2Ts(String dateVar , DateTimeFormatter dateTimeFormatter) {
+        LocalDateTime dateTime = LocalDateTime.parse(dateVar, dateTimeFormatter);
+        long epochMilli = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        return new Timestamp(epochMilli);
+    }
+
+
+    public static LocalDateTime parseTs2DateTime(Timestamp tsDate){
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(tsDate.getTime()), ZoneId.systemDefault());
+    }
+
 
 }

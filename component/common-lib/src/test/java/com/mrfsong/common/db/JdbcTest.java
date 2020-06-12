@@ -4,6 +4,7 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.google.common.base.Stopwatch;
 import com.mrfsong.common.util.DateUtil;
 import com.mrfsong.common.util.Printer;
+import com.mrfsong.common.util.Tuple3;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
 import org.junit.Assert;
@@ -20,6 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 import static com.github.jsonzou.jmockdata.JMockData.mock;
@@ -36,13 +38,14 @@ import static com.github.jsonzou.jmockdata.JMockData.mock;
 public class JdbcTest {
 
     private static Integer BULK_SIZE = 50000;
+    private static Integer QUERY_BATCH_SIZE = 1000000;
     private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     Properties dbProperties;
 
     MockConfig mockConfig;
 
-    AtomicLong counter = new AtomicLong(20165728L);
+    AtomicLong counter = new AtomicLong(25165728L);
 
     @Before
     public void prepare() {
@@ -58,8 +61,8 @@ public class JdbcTest {
                 .doubleRange(1.0d,9999.99999d)
                 .floatRange(1.11111f,9999.99999f)
                 .decimalScale(3) // 设置小数位数为3，默认是2
-                .dateRange("2020-06-10 00:00:00","2020-06-10 23:59:59")
-                .intRange(20,100)
+                .dateRange("2020-06-15 00:00:00","2020-06-15 23:59:59")
+                .intRange(30,100)
 //                .setEnabledCircle(false)
 //                .stringRegex("mock-")
                 .globalConfig();
@@ -109,8 +112,7 @@ public class JdbcTest {
     }
 
     @Test
-    public void showMagic() {
-
+    public void information_schema() {
         String sql = "select table_rows from information_schema.tables where table_name='index_test' and table_schema='dcomb'";
         Connection conn = null;
         ResultSet resultSet = null;
@@ -343,7 +345,7 @@ public class JdbcTest {
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             preparedStatement = conn.prepareStatement("insert into `dcomb`.`source`(id,`name`,age,create_time) values (? , ? , ? , ?)");
             long begin = System.currentTimeMillis();
-            for(int i=0;i< 5000000;i++){
+            for(int i=0;i< 10000000;i++){
                 preparedStatement.setLong(1,counter.incrementAndGet());
                 preparedStatement.setString(2,getUUID());
                 preparedStatement.setInt(3,mock(Integer.class,mockConfig));
@@ -464,14 +466,14 @@ public class JdbcTest {
                 double bigFactor = entry.getValue() / partitionScaleSize * 1.0D;
                 //拆分单天
                 long hourSplitTotal = Math.round(24 / bigFactor);
-                LocalDateTime[] arr = getOneDayRange(entry.getKey());
+                LocalDateTime[] arr = getOneDayRange(entry.getKey(),false);
                 Map<LocalDateTime, LocalDateTime> localDateTimeLocalDateTimeMap = partitionByDateInteval(arr[0], arr[1], hourSplitTotal, ChronoUnit.HOURS);
             }
 
             //合并小分片（切记要剔除大分片的时间段）
             for(Map.Entry<Integer,Integer> entry : indexMap.entrySet()){
                 List<Map.Entry<Timestamp, Long>> subList = arrayList.subList(entry.getKey(),entry.getValue());
-                doMergeParition(subList,partitionScaleSize);
+                doMergePartition(subList,partitionScaleSize);
             }
 
         }catch (Exception e) {
@@ -493,7 +495,6 @@ public class JdbcTest {
 
     @Test(timeout=30000)
     public void testDatePartitionTwo(){
-
 
         //计时器
         Stopwatch stopwatch = Stopwatch.createStarted();
@@ -546,7 +547,7 @@ public class JdbcTest {
                 double bigFactor = gRowCountList.get(idx / 2) / partitionScaleSize * 1.0D;
                 //拆分单天
                 long hourSplitTotal = Math.round(24 / bigFactor);
-                LocalDateTime[] arr = getOneMaxDayRange(gDateList.get(idx+1));//max值
+                LocalDateTime[] arr = getOneDayRange(gDateList.get(idx+1),true);//max值
                 Map<LocalDateTime, LocalDateTime> splitDateMap = partitionByDateInteval(arr[0], arr[1], hourSplitTotal, ChronoUnit.HOURS);
                 splitDateMap.entrySet().stream().forEach(entry -> log.debug("[Bigger] start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
 
@@ -555,7 +556,7 @@ public class JdbcTest {
             //合并小分片（切记要剔除大分片的时间段）
             for(Map.Entry<Integer,Integer> entry : dateIndexMap.entrySet()){
                 List<Long> subList = gRowCountList.subList(entry.getKey(),entry.getValue());
-                doMergeParition(subList,gDateList,partitionScaleSize);
+                doMergePartition(subList,gDateList,partitionScaleSize);
             }
 
             log.info("处理完成，耗时 [{}]", stopwatch);
@@ -579,7 +580,6 @@ public class JdbcTest {
     @Test(timeout=300000)
     public void testDatePartitionThree(){
 
-
         //计时器
         Stopwatch stopwatch = Stopwatch.createStarted();
 
@@ -590,15 +590,19 @@ public class JdbcTest {
 
         //目前分片值保留了日期查询字段，实际情况可能会包括其他非日期索引查询字段，所以可以做以下假设：
         //1: 单日期分片数据 * rand(0 ~ 1] = batchSize
-        //2: 当只存在分片日期查询条件时，该值为1；当存在其他条件时，该值 大于 1，具体应用中需要通过识别Where条件来决定取值
-        double partitionScaleRatio = 1.0d;
+        //2: 当只存在分片日期查询条件时，该值为1；当存在其他查询条件时，该值大于1；
+        //3: 具体应用中需要通过识别Where条件来决定取值
+        double partitionScaleRatio = 1.0d;//日期分片"放大"系数
+        double mergedOverflowRatio = 1.1d;//合并小分片"溢出"系数，这个值会决定合并后的小分片是否分裂
+        long partitionScaleSize = Math.round(batchSize * partitionScaleRatio);//分片记录放大值
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             statement = conn.createStatement();
 
-            //TODO 此处如果存在查询效率瓶颈，可以先获取min(date),max(date) ，然后拆分为天，分别统计每天的min/max/count量 （假定：单天数据量不能过大 ！！！）
-            resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00' and create_time < '2020-06-11 00:00:00'");
+
+            // TODO 获取最小、最大日期可以间接的从查询条件中直接获取
+            resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00'");
 
             Timestamp minDate = null;
             Timestamp maxDate = null;
@@ -608,23 +612,23 @@ public class JdbcTest {
             }
             resultSet.close();
 
-            List<Range<Timestamp>> rangeList = subDateResult(DateUtil.formatTs(minDate,DATE_FORMATTER), DateUtil.formatTs(maxDate,DATE_FORMATTER), conn);
+            List<Tuple3<Timestamp,Timestamp,Long>> rangeList = subDateResult(DateUtil.formatTs(minDate,DATE_FORMATTER), DateUtil.formatTs(maxDate,DATE_FORMATTER), conn);
 
             //数据结构： 2N: minDate 2N+1: maxDate
             List<Timestamp> gDateList = new ArrayList<>();//分组min/max日期列表，步长为2
             //数据结构： N: count
             List<Long> gRowCountList = new ArrayList<>();
 
-            rangeList.forEach(rng -> {
-                gDateList.add(rng.getMin());
-                gDateList.add(rng.getMax());
-                gRowCountList.add(rng.getCount());
+            rangeList.forEach(tp -> {
+                gDateList.add(tp._1());
+                gDateList.add(tp._2());
+                gRowCountList.add(tp._3());
             });
 
 
             //检测大分片
             int start = 0 ,index = 0;
-            long partitionScaleSize = Math.round(batchSize * partitionScaleRatio);//分片记录放大值
+
             Map<Integer,Integer> dateIndexMap = new HashMap<>();//"小"分片日期数据区间
 
             List<Integer> bigPartDateIndex = new ArrayList<>();
@@ -633,26 +637,40 @@ public class JdbcTest {
                     dateIndexMap.put(start, index);
                     start = index ;
                     bigPartDateIndex.add(index * 2);
-                }
+                } /*else if (cnt == 0){
+                    //拆分min/max分天统计中，可能会存在某day数据无记录的情况，此处需要进行跳过
+                    if(start > 0 && start != index){
+                        dateIndexMap.put(start, index);
+                    }
+                    start = index;
+                }*/
                 index++;
             }
 
             //拆分大分片
             for(Integer idx : bigPartDateIndex){
-                double bigFactor = gRowCountList.get(idx / 2) / partitionScaleSize * 1.0D;
-                //拆分单天
-                long hourSplitTotal = Math.round(24 / bigFactor);
-                LocalDateTime[] arr = getOneMaxDayRange(gDateList.get(idx+1));//max值
-                Map<LocalDateTime, LocalDateTime> splitDateMap = partitionByDateInteval(arr[0], arr[1], hourSplitTotal, ChronoUnit.HOURS);
-                splitDateMap.entrySet().stream().forEach(entry -> log.warn("[Bigger Partition] start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
+                double bigFactor = gRowCountList.get(idx / 2) / (partitionScaleSize * 1.0D);
+                //大分片降级 （Day -> Hours）
+                long hourSplitNum = new Double(Math.ceil(24 / bigFactor)).longValue();
+                LocalDateTime[] arr = getOneDayRange(gDateList.get(idx+1),true);//max值
+                doSplitBigPartition(arr[0],arr[1],hourSplitNum,ChronoUnit.HOURS);
 
             }
 
-            //合并小分片（切记要剔除大分片的时间段）
+            //合并小分片合并,减少分片量
+            List<Tuple3<Timestamp,Timestamp,Long>> mergedDateList = new ArrayList<>();
             for(Map.Entry<Integer,Integer> entry : dateIndexMap.entrySet()){
                 List<Long> subList = gRowCountList.subList(entry.getKey(),entry.getValue());
-                doMergeParition(subList,gDateList,partitionScaleSize);
+                mergedDateList.addAll(doMergePartition(subList,gDateList,partitionScaleSize));
             }
+
+            //小分片合并后可能会新产生大分片，此处需要对合并结果进行二次检测、处理
+            List<Tuple3<Timestamp, Timestamp, Long>> mergedBigPartitions = mergedDateList.stream().filter(tp -> (tp._3() > partitionScaleSize * mergedOverflowRatio)).collect(Collectors.toList());
+            mergedBigPartitions.forEach(bigPartition -> {
+                double ceilVal = Math.ceil(bigPartition._3() / (partitionScaleSize * 1.0D));
+                long splitNum = new Double(ceilVal).longValue();
+                doSplitBigPartition(DateUtil.parseTs2DateTime(bigPartition._1()),DateUtil.parseTs2DateTime(bigPartition._2()),splitNum,ChronoUnit.HOURS);
+            });
 
             log.info("处理完成，耗时 [{}]", stopwatch);
 
@@ -676,23 +694,22 @@ public class JdbcTest {
     }
 
 
-    private Map<LocalDateTime,LocalDateTime> partitionByDateInteval(LocalDateTime minDateTime, LocalDateTime maxDateTime, long step , ChronoUnit dateInteval ) {
+    private Map<LocalDateTime,LocalDateTime> partitionByDateInteval(LocalDateTime minDateTime, LocalDateTime maxDateTime, long splitNum , ChronoUnit dateInteval ) {
 
         Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
-        long differ = dateInteval.between(minDateTime, maxDateTime);
-        long offset = differ / step == 0 ? differ / step : (differ / step) + 1;
+        long differ = dateInteval.between(minDateTime, maxDateTime);//日期差值
+        long step = new Double(Math.ceil(differ  * 1.0d / splitNum)).longValue();//步长
         LocalDateTime tmpDateTime = minDateTime;
 
-        for(long idx = 1; idx <= offset;idx++){
+        for(long idx = 1; idx <= splitNum;idx++){
             LocalDateTime plusDateTime = tmpDateTime.plus(step,dateInteval);
-            if(idx == offset){
+            if(idx == splitNum){
                 plusDateTime = maxDateTime;
             }
             splitResult.put(tmpDateTime, plusDateTime);
-            log.debug("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
+//            log.debug("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
             tmpDateTime = plusDateTime;
         }
-
         return splitResult;
 
     }
@@ -702,9 +719,9 @@ public class JdbcTest {
         long differ = ChronoUnit.DAYS.between(minDateTime, maxDateTime);
         LongStream.range(0,differ+1).forEach(idx -> {
             if(idx == 0 ) {
-                splitResult.put(minDateTime, LocalDateTime.of(minDateTime.toLocalDate(), LocalTime.MAX));
+                splitResult.put(minDateTime, LocalDateTime.of(minDateTime.plusDays(1).toLocalDate(), LocalTime.MIN));
             }else if(idx == differ) {
-                splitResult.put(LocalDateTime.of(maxDateTime.toLocalDate(), LocalTime.MIN).plusSeconds(1L),maxDateTime);
+                splitResult.put(LocalDateTime.of(maxDateTime.toLocalDate(), LocalTime.MIN),maxDateTime.plusSeconds(1L));
             } else {
                 LocalDateTime plusDateTime = minDateTime.plusDays(idx);
                 splitResult.put(LocalDateTime.of(plusDateTime.toLocalDate(), LocalTime.MIN),LocalDateTime.of(plusDateTime.plusDays(1).toLocalDate(), LocalTime.MIN));
@@ -715,26 +732,25 @@ public class JdbcTest {
         return splitResult;
     }
 
-
-    private LocalDateTime[] getOneDayRange(Timestamp ts){
+    /**
+     * 获取指定日期
+     * @param ts        原始日期
+     * @param within    是否在当前日期范围内
+     * @return
+     */
+    private LocalDateTime[] getOneDayRange(Timestamp ts,Boolean within){
         LocalDateTime[] array = new LocalDateTime[2];
         LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(ts.getTime()), ZoneId.systemDefault());
         array[0] = LocalDateTime.of(dateTime.toLocalDate(), LocalTime.MIN);
-        array[1] = LocalDateTime.of(dateTime.toLocalDate(), LocalTime.MAX);//group by 返回的时间是粗略值，不一定为group by 字段的最大值
-
+        if(within){
+            array[1] = dateTime;
+        }else {
+            array[1] = LocalDateTime.of(dateTime.toLocalDate(), LocalTime.MAX);
+        }
         return array;
     }
 
-    private LocalDateTime[] getOneMaxDayRange(Timestamp ts){
-        LocalDateTime[] array = new LocalDateTime[2];
-        LocalDateTime dateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(ts.getTime()), ZoneId.systemDefault());
-        array[0] = LocalDateTime.of(dateTime.toLocalDate(), LocalTime.MIN);
-        array[1] = dateTime;//group by 返回的时间是粗略值，不一定为group by 字段的最大值
-
-        return array;
-    }
-
-    private void doMergeParition(List<Map.Entry<Timestamp, Long>> dataList , Long threshold) {
+    private void doMergePartition(List<Map.Entry<Timestamp, Long>> dataList , Long threshold) {
 
         long counter = 0L;
         Timestamp startTs = dataList.get(0).getKey();
@@ -761,8 +777,16 @@ public class JdbcTest {
 
     }
 
-    private void doMergeParition(List<Long> countList ,List<Timestamp> timeList , Long threshold) {
 
+    private void doSplitBigPartition(LocalDateTime startTime, LocalDateTime endTime , Long splitNum,ChronoUnit chronoUnit) {
+        log.warn("Find Bigger Partition , Date start: {} , end: {}" , startTime.format(DATE_FORMATTER),endTime.format(DATE_FORMATTER));
+        Map<LocalDateTime, LocalDateTime> splitDateMap = partitionByDateInteval(startTime, endTime, splitNum, chronoUnit);
+        splitDateMap.entrySet().stream().forEach(entry -> log.info("Bigger Partition Result ===> , Date start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
+    }
+
+    private List<Tuple3<Timestamp,Timestamp,Long>> doMergePartition(List<Long> countList , List<Timestamp> timeList , Long threshold) {
+
+        List<Tuple3<Timestamp,Timestamp,Long>> results = new ArrayList<>();
         long counter = 0L; int position = 0;
         Timestamp startTs = timeList.get(0);
         LocalDateTime startDateTime = null ;
@@ -773,8 +797,8 @@ public class JdbcTest {
             if(counter >= threshold){
                 startDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startTs.getTime()), ZoneId.systemDefault());
                 endDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(timeList.get(position * 2 + 1).getTime()), ZoneId.systemDefault());//取max
+                results.add(new Tuple3<>(startTs,timeList.get(position * 2 + 1),counter));
                 log.warn("startTime:{} , endTime:{},counter:{}",startDateTime.format(DATE_FORMATTER),endDateTime.format(DATE_FORMATTER),counter);
-
                 startTs = timeList.get((position + 1) * 2);
                 counter = 0L;
             }
@@ -784,8 +808,11 @@ public class JdbcTest {
         if(counter > 0L){
             startDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(startTs.getTime()), ZoneId.systemDefault());
             endDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(timeList.get((position-1) * 2 + 1).getTime()), ZoneId.systemDefault());//position累加器，最后值为数组元素数量，故此处需要做减1操作
+            results.add(new Tuple3<>(startTs,timeList.get((position-1) * 2 + 1),counter));
             log.warn("startTime:{} , endTime:{} , counter:{}",startDateTime.format(DATE_FORMATTER),endDateTime.format(DATE_FORMATTER),counter);
         }
+
+        return results;
 
     }
 
@@ -797,23 +824,35 @@ public class JdbcTest {
      * @param conn
      * @return
      */
-    private List<Range<Timestamp>> subDateResult(String begin , String end , Connection conn) {
+    private List<Tuple3<Timestamp,Timestamp,Long>> subDateResult(String begin , String end , Connection conn) {
         LocalDateTime dateTimeStart = LocalDateTime.parse(begin, DATE_FORMATTER);
         LocalDateTime dateTimeEnd = LocalDateTime.parse(end, DATE_FORMATTER);
 
-        List<Range<Timestamp>> gDateList = new ArrayList<>();
+        List<Tuple3<Timestamp,Timestamp,Long>> gDateList = new ArrayList<>();
         Map<LocalDateTime, LocalDateTime> dateSplitResult = partitionByDay(dateTimeStart, dateTimeEnd);
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time < ?";
         try{
             for(Map.Entry<LocalDateTime, LocalDateTime> entry : dateSplitResult.entrySet()){
+                String queryDateFrom = entry.getKey().format(DATE_FORMATTER);
+                String queryDateTo = entry.getValue().format(DATE_FORMATTER);
                 statement = conn.prepareStatement(sql);
-                statement.setString(1,entry.getKey().format(DATE_FORMATTER));
-                statement.setString(2,entry.getValue().format(DATE_FORMATTER));
+                statement.setString(1,queryDateFrom);
+                statement.setString(2,queryDateTo);
                 resultSet = statement.executeQuery();
+                Timestamp minTs ;
+                Timestamp maxTs ;
+                Long count;
                 if(resultSet.next()){
-                    gDateList.add(new Range<>(resultSet.getTimestamp(1),resultSet.getTimestamp(2),resultSet.getLong(3)));
+                    minTs = resultSet.getTimestamp(1);
+                    maxTs = resultSet.getTimestamp(2);
+                    count = resultSet.getLong(3);
+                    if(minTs != null && maxTs != null){
+                        gDateList.add(new Tuple3(minTs,maxTs,count));
+                    }/*else {
+                        gDateList.add(new Range<>(DateUtil.parse2Ts(queryDateFrom,DATE_FORMATTER),DateUtil.parse2Ts(queryDateTo,DATE_FORMATTER),count));
+                    }*/
                 }
             }
         }catch (Exception e) {
