@@ -6,6 +6,7 @@ import com.github.jsonzou.jmockdata.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.hash.BloomFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
@@ -196,6 +197,9 @@ public class ObjectTest {
         log.info("Result val : " + execRtValue);
     }
 
+    /**
+     * [)区间 不包括后者
+     */
     @Test
     public void testSubList() {
         List<String> list = Lists.newArrayList("1","2","3","4","5","6","7");
@@ -205,6 +209,25 @@ public class ObjectTest {
         for(;;){
             log.info("" + Math.random());
         }
+    }
+
+    @Test
+    public void testNum(){
+        Assert.assertFalse(100L > 100 * 1.00001d);
+
+//        long round = Math.round(1.6d);//四舍五入
+        double ceil = Math.ceil(1160358 * 1.0d / 1000000);//向上取整
+        double ceil2 = Math.ceil(1160358 / 1000000 * 1.0d);//向上取整
+//        double floor = Math.floor(1.6d);//向下取整
+
+
+
+//        log.info("round: {} , ceil:{} , floor:{}" , round , ceil ,floor);
+
+        double var1 = (1160358 * 1.0d) / 1000000;
+        double var2= 1160358 / (1000000 * 1.0d);
+
+        log.info("var1: {} , var2:{}" , var1, var2);
     }
 
 

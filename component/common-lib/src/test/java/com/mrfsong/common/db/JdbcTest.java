@@ -458,11 +458,6 @@ public class JdbcTest {
             for(Map.Entry<Timestamp, Long> entry : bigPartition){
                 //此值表示当前分片的放大系数。根据此系数可以动态的对大分片数据进行二次拆分
                 //如果当前分片是按照day切分的，那么此值表示待拆分的hours"份数"
-
-//                LocalDateTime bigDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(entry.getKey().getTime()), ZoneId.systemDefault());
-//                LocalDate localDate = bigDateTime.toLocalDate();
-
-
                 double bigFactor = entry.getValue() / partitionScaleSize * 1.0D;
                 //拆分单天
                 long hourSplitTotal = Math.round(24 / bigFactor);
@@ -492,7 +487,7 @@ public class JdbcTest {
     }
 
 
-
+    @Deprecated
     @Test(timeout=30000)
     public void testDatePartitionTwo(){
 
@@ -628,7 +623,6 @@ public class JdbcTest {
 
             //检测大分片
             int start = 0 ,index = 0;
-
             Map<Integer,Integer> dateIndexMap = new HashMap<>();//"小"分片日期数据区间
 
             List<Integer> bigPartDateIndex = new ArrayList<>();
@@ -637,13 +631,7 @@ public class JdbcTest {
                     dateIndexMap.put(start, index);
                     start = index ;
                     bigPartDateIndex.add(index * 2);
-                } /*else if (cnt == 0){
-                    //拆分min/max分天统计中，可能会存在某day数据无记录的情况，此处需要进行跳过
-                    if(start > 0 && start != index){
-                        dateIndexMap.put(start, index);
-                    }
-                    start = index;
-                }*/
+                }
                 index++;
             }
 
@@ -850,9 +838,7 @@ public class JdbcTest {
                     count = resultSet.getLong(3);
                     if(minTs != null && maxTs != null){
                         gDateList.add(new Tuple3(minTs,maxTs,count));
-                    }/*else {
-                        gDateList.add(new Range<>(DateUtil.parse2Ts(queryDateFrom,DATE_FORMATTER),DateUtil.parse2Ts(queryDateTo,DATE_FORMATTER),count));
-                    }*/
+                    }
                 }
             }
         }catch (Exception e) {
