@@ -42,12 +42,6 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>com.mrfsong</groupId>
-            <artifactId>sql-parser</artifactId>
-            <version>${project.parent.version}</version>
-        </dependency>
-
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

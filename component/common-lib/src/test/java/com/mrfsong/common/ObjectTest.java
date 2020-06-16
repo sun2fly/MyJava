@@ -9,11 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.List;
-import java.util.Scanner;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 /**
  * <p>
@@ -155,6 +155,10 @@ public class ObjectTest {
         log.info("hours:{} , halfDays:{} , days:{} , months:{} , years:{}" , hours,halfDays,days,months,years);*/
 
 
+        Duration duration = ChronoUnit.DAYS.getDuration();
+        log.info("Hours : {}" , duration.toHours());
+
+
     }
 
     @Test
@@ -202,27 +206,50 @@ public class ObjectTest {
      */
     @Test
     public void testSubList() {
+        List<Integer> indexList = Lists.newArrayList(1);
         List<String> list = Lists.newArrayList("1","2","3","4","5","6","7");
-        List<String> subList = list.subList(0, 2);
-        subList.forEach(o -> log.info(o));
+        /*List<String> subList = list.subList(2, 2);
+        subList.forEach(o -> log.info(o));*/
 
-        for(;;){
-            log.info("" + Math.random());
+        int position = 0;
+        Map<Integer,Integer> map = new LinkedHashMap<>();
+        for(int idx : indexList){
+            if(position < idx){
+                map.put(position,idx);
+            }
+            position = idx + 1;
         }
+
+        if(position < list.size()) {
+            map.put(position,list.size());
+        }
+
+        log.warn("position: {}" , position);
+
+        map.entrySet().forEach(entry -> {
+            log.info("startIndex : {} , endIndex : {}" , entry.getKey() , entry.getValue());
+        });
+
+
+
+       /* for(;;){
+            log.info("" + Math.random());
+        }*/
     }
 
     @Test
     public void testNum(){
         Assert.assertFalse(100L > 100 * 1.00001d);
 
-//        long round = Math.round(1.6d);//四舍五入
+        long round = Math.round(1.6d);//四舍五入
         double ceil = Math.ceil(1160358 * 1.0d / 1000000);//向上取整
         double ceil2 = Math.ceil(1160358 / 1000000 * 1.0d);//向上取整
-//        double floor = Math.floor(1.6d);//向下取整
+        double ceil3 = Math.ceil(113 * 0.9d);//向上取整
+        double floor = Math.floor(1.6d);//向下取整
 
 
 
-//        log.info("round: {} , ceil:{} , floor:{}" , round , ceil ,floor);
+        log.info("round: {} , ceil:{} , floor:{}" , round , ceil3 ,floor);
 
         double var1 = (1160358 * 1.0d) / 1000000;
         double var2= 1160358 / (1000000 * 1.0d);

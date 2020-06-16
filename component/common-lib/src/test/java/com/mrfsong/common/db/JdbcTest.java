@@ -4,6 +4,7 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.google.common.base.Stopwatch;
 import com.mrfsong.common.util.DateUtil;
 import com.mrfsong.common.util.Printer;
+import com.mrfsong.common.util.Tuple2;
 import com.mrfsong.common.util.Tuple3;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
@@ -21,8 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 import static com.github.jsonzou.jmockdata.JMockData.mock;
 
@@ -45,7 +44,7 @@ public class JdbcTest {
 
     MockConfig mockConfig;
 
-    AtomicLong counter = new AtomicLong(25165728L);
+    AtomicLong counter = new AtomicLong(29665728L);
 
     @Before
     public void prepare() {
@@ -61,7 +60,7 @@ public class JdbcTest {
                 .doubleRange(1.0d,9999.99999d)
                 .floatRange(1.11111f,9999.99999f)
                 .decimalScale(3) // 设置小数位数为3，默认是2
-                .dateRange("2020-06-15 00:00:00","2020-06-15 23:59:59")
+                .dateRange("2020-06-16 00:00:00","2020-06-16 00:01:00")
                 .intRange(30,100)
 //                .setEnabledCircle(false)
 //                .stringRegex("mock-")
@@ -335,7 +334,7 @@ public class JdbcTest {
      * TODO 如何处理Mock数据重复问题
      */
     @Test
-    public void createData(){
+    public void mockData(){
 
         Connection conn = null;
         PreparedStatement preparedStatement = null;
@@ -344,8 +343,8 @@ public class JdbcTest {
 //            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&cachePrepStmts=true&useServerPrepStmts=true","root","root");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             preparedStatement = conn.prepareStatement("insert into `dcomb`.`source`(id,`name`,age,create_time) values (? , ? , ? , ?)");
-            long begin = System.currentTimeMillis();
-            for(int i=0;i< 10000000;i++){
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            for(int i=0;i< 3000000;i++){
                 preparedStatement.setLong(1,counter.incrementAndGet());
                 preparedStatement.setString(2,getUUID());
                 preparedStatement.setInt(3,mock(Integer.class,mockConfig));
@@ -360,7 +359,7 @@ public class JdbcTest {
 
             preparedStatement.executeBatch();
             preparedStatement.clearBatch();
-            log.warn("prepareStatementBatch 消耗时间:" + (System.currentTimeMillis() - begin));
+            log.warn("prepareStatementBatch 消耗时间:" + stopwatch);
         }catch (Exception e) {
             Assert.fail(Printer.getException(e));
         } finally {
@@ -587,47 +586,54 @@ public class JdbcTest {
         //1: 单日期分片数据 * rand(0 ~ 1] = batchSize
         //2: 当只存在分片日期查询条件时，该值为1；当存在其他查询条件时，该值大于1；
         //3: 具体应用中需要通过识别Where条件来决定取值
-        double partitionScaleRatio = 1.0d;//日期分片"放大"系数
-        double mergedOverflowRatio = 1.1d;//合并小分片"溢出"系数，这个值会决定合并后的小分片是否分裂
-        long partitionScaleSize = Math.round(batchSize * partitionScaleRatio);//分片记录放大值
+        double mergedStopRatio = 0.95d;         //合并小分片"分裂"系数，超过这个值会结束当前合并，开启新的小分片合并
+        double partitionOverflowRatio = 1.1d;   //大分片"溢出"系数，这个值会决定是否会被识别为"大分片"
+        long partitionOverflowSize = (long)Math.ceil(batchSize * partitionOverflowRatio);//分片记录放大值
+
+        List<Tuple2<String,String>> lastSplitResult = new ArrayList<>();//最终日期分片结果
+
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             statement = conn.createStatement();
 
-
-            // TODO 获取最小、最大日期可以间接的从查询条件中直接获取
             resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00'");
 
-            Timestamp minDate = null;
-            Timestamp maxDate = null;
+            Timestamp minDate = null , maxDate = null;
             while(resultSet.next()){
                 minDate = resultSet.getTimestamp(1);
                 maxDate = resultSet.getTimestamp(2);
             }
             resultSet.close();
 
-            List<Tuple3<Timestamp,Timestamp,Long>> rangeList = subDateResult(DateUtil.formatTs(minDate,DATE_FORMATTER), DateUtil.formatTs(maxDate,DATE_FORMATTER), conn);
+            //日期分片统计结果
+            Map<LocalDateTime, LocalDateTime> dayPartitionMap = datePartition(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
 
-            //数据结构： 2N: minDate 2N+1: maxDate
-            List<Timestamp> gDateList = new ArrayList<>();//分组min/max日期列表，步长为2
-            //数据结构： N: count
-            List<Long> gRowCountList = new ArrayList<>();
 
-            rangeList.forEach(tp -> {
-                gDateList.add(tp._1());
-                gDateList.add(tp._2());
-                gRowCountList.add(tp._3());
+            /* 分片检测， 大分片识别、大分片拆分、小分片合并 */
+
+
+            List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = partitionDetection(dayPartitionMap,conn);
+//            List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = subDateResult(DateUtil.formatTs(minDate,DATE_FORMATTER), DateUtil.formatTs(maxDate,DATE_FORMATTER),ChronoUnit.DAYS, conn);
+
+            //分片日期min/max查询结果 （数据结构： 2N: minDate 2N+1: maxDate）
+            List<Timestamp> queryDateList = new ArrayList<>();
+            //分片日期记录count条数 （数据结构： N: count）
+            List<Long> rowCountList = new ArrayList<>();
+
+            splitDayStatResult.forEach(tp -> {
+                queryDateList.add(tp._1());
+                queryDateList.add(tp._2());
+                rowCountList.add(tp._3());
             });
 
 
             //检测大分片
             int start = 0 ,index = 0;
             Map<Integer,Integer> dateIndexMap = new HashMap<>();//"小"分片日期数据区间
-
             List<Integer> bigPartDateIndex = new ArrayList<>();
-            for(Long cnt : gRowCountList){
-                if(cnt > partitionScaleSize){
+            for(Long cnt : rowCountList){
+                if(cnt > partitionOverflowSize){
                     dateIndexMap.put(start, index);
                     start = index ;
                     bigPartDateIndex.add(index * 2);
@@ -636,29 +642,43 @@ public class JdbcTest {
             }
 
             //拆分大分片
+            Map<LocalDateTime, LocalDateTime> splitDateMap = new HashMap<>();
             for(Integer idx : bigPartDateIndex){
-                double bigFactor = gRowCountList.get(idx / 2) / (partitionScaleSize * 1.0D);
-                //大分片降级 （Day -> Hours）
-                long hourSplitNum = new Double(Math.ceil(24 / bigFactor)).longValue();
-                LocalDateTime[] arr = getOneDayRange(gDateList.get(idx+1),true);//max值
-                doSplitBigPartition(arr[0],arr[1],hourSplitNum,ChronoUnit.HOURS);
+                double bigFactor = rowCountList.get(idx / 2) / (partitionOverflowSize * 1.0D);
+                //大分片时间降级 （Day -> Hours）
 
+                long splitNum = (long)Math.ceil(24 / bigFactor);
+                LocalDateTime[] arr = getOneDayRange(queryDateList.get(idx+1),true);//max值
+//                Map<LocalDateTime, LocalDateTime> dayPartition = partitionByDateInteval(arr[0], arr[1], splitNum, ChronoUnit.HOURS);
+                Map<LocalDateTime, LocalDateTime> dayPartition = doSplitPartition(arr[0], arr[1], splitNum, ChronoUnit.HOURS);
+                splitDateMap.putAll(dayPartition);
             }
 
-            //合并小分片合并,减少分片量
+            //分片结果检测
+//            List<Tuple3<Timestamp, Timestamp, Long>> splitPartitionStat = partitionDetection(splitDateMap, conn);
+//            List<Tuple3<Timestamp, Timestamp, Long>> overflowPartition = splitPartitionStat.stream().filter(tp -> tp._3() > partitionOverflowSize).collect(Collectors.toList());
+
+
+            //尝试小分片合并,减少分片量
+            long mergedStopSize = (long)Math.ceil(batchSize * mergedStopRatio);
             List<Tuple3<Timestamp,Timestamp,Long>> mergedDateList = new ArrayList<>();
             for(Map.Entry<Integer,Integer> entry : dateIndexMap.entrySet()){
-                List<Long> subList = gRowCountList.subList(entry.getKey(),entry.getValue());
-                mergedDateList.addAll(doMergePartition(subList,gDateList,partitionScaleSize));
+                List<Long> subList = rowCountList.subList(entry.getKey(),entry.getValue());
+                mergedDateList.addAll(doMergePartition(subList,queryDateList,mergedStopSize));
             }
 
-            //小分片合并后可能会新产生大分片，此处需要对合并结果进行二次检测、处理
-            List<Tuple3<Timestamp, Timestamp, Long>> mergedBigPartitions = mergedDateList.stream().filter(tp -> (tp._3() > partitionScaleSize * mergedOverflowRatio)).collect(Collectors.toList());
-            mergedBigPartitions.forEach(bigPartition -> {
-                double ceilVal = Math.ceil(bigPartition._3() / (partitionScaleSize * 1.0D));
-                long splitNum = new Double(ceilVal).longValue();
-                doSplitBigPartition(DateUtil.parseTs2DateTime(bigPartition._1()),DateUtil.parseTs2DateTime(bigPartition._2()),splitNum,ChronoUnit.HOURS);
+            mergedDateList.forEach(tuple -> {
+                lastSplitResult.add(new Tuple2<>(DateUtil.formatTs(tuple._1(),DATE_FORMATTER),DateUtil.formatTs(tuple._2(),DATE_FORMATTER)));
             });
+
+            //小分片合并后可能会新产生大分片，此处需要对合并结果进行二次检测、处理
+            //小分片合并时已经设置了安全阈值【stopCount】，可以保证已有小分片合并后不会"膨胀"产生大分片
+        /*    List<Tuple3<Timestamp, Timestamp, Long>> mergedBigPartitions = mergedDateList.stream().filter(tp -> (tp._3() > partitionOverflowSize)).collect(Collectors.toList());
+            mergedBigPartitions.forEach(bigPartition -> {
+                long splitNum = (long)Math.ceil(bigPartition._3() / (partitionOverflowSize * 1.0D));
+                doSplitPartition(DateUtil.parseTs2DateTime(bigPartition._1()),DateUtil.parseTs2DateTime(bigPartition._2()),splitNum,ChronoUnit.HOURS);
+            });*/
+
 
             log.info("处理完成，耗时 [{}]", stopwatch);
 
@@ -677,6 +697,78 @@ public class JdbcTest {
         }
     }
 
+    @Test(timeout = 1000 * 60 * 10)
+    public void testPartitionFour() {
+        //计时器
+        Stopwatch stopwatch = Stopwatch.createStarted();
+
+
+        Connection conn = null;
+        Statement statement = null;
+        ResultSet resultSet = null;
+
+        //目前分片值保留了日期查询字段，实际情况可能会包括其他非日期索引查询字段，所以可以做以下假设：
+        //1: 单日期分片数据 * rand(0 ~ 1] = batchSize
+        //2: 当只存在分片日期查询条件时，该值为1；当存在其他查询条件时，该值大于1；
+        //3: 具体应用中需要通过识别Where条件来决定取值
+        long batchSize = 1000000L;
+        double mergedStopRatio = 0.95d;         //合并小分片"分裂"系数，超过这个值会结束当前合并，开启新的小分片合并
+        double partitionOverflowRatio = 1.1d;   //大分片"溢出"系数，这个值会决定是否会被识别为"大分片"
+        long partitionOverflowSize = (long)Math.ceil(batchSize * partitionOverflowRatio);//分片记录放大值
+        long mergedStopSize = (long)Math.ceil(batchSize * mergedStopRatio);
+
+        List<Tuple2<String,String>> lastSplitResult = new ArrayList<>();//最终日期分片结果
+
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
+            statement = conn.createStatement();
+
+            resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00'");
+
+            Timestamp minDate = null , maxDate = null;
+            while(resultSet.next()){
+                minDate = resultSet.getTimestamp(1);
+                maxDate = resultSet.getTimestamp(2);
+            }
+            resultSet.close();
+
+            //日期分片统计结果
+            Map<LocalDateTime, LocalDateTime> dayPartitionMap = datePartition(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
+            List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = partitionDetection(dayPartitionMap,conn);
+            /* 分片检测， 大分片识别、大分片拆分、小分片合并 */
+            doMain(lastSplitResult,splitDayStatResult,partitionOverflowSize,mergedStopSize,conn);
+
+            lastSplitResult.forEach(tp -> log.warn("最终分片结果：{}",tp.toString()));
+
+            log.info("处理完成，耗时 [{}]", stopwatch);
+
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(statement != null) {
+                try {
+                    resultSet.close();
+                    statement.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+    @Test
+    public void testMethod() {
+        LocalDateTime startTime = LocalDateTime.parse("2020-06-05 23:10:35", DATE_FORMATTER);
+        LocalDateTime endTime = LocalDateTime.parse("2020-06-16 01:00:00", DATE_FORMATTER);
+        Map<LocalDateTime, LocalDateTime> dateTimeMap = datePartition(startTime, endTime, ChronoUnit.DAYS);
+        dateTimeMap.entrySet().forEach(entry -> {
+            log.info("start : {} , end: {}" , entry.getKey().format(DATE_FORMATTER) ,entry.getValue().format(DATE_FORMATTER));
+        });
+    }
+
     private String getUUID() {
         return UUID.randomUUID().toString().replaceAll("-","").toLowerCase();
     }
@@ -686,13 +778,13 @@ public class JdbcTest {
 
         Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
         long differ = dateInteval.between(minDateTime, maxDateTime);//日期差值
-        long step = new Double(Math.ceil(differ  * 1.0d / splitNum)).longValue();//步长
+        long step = (long)Math.ceil(differ  * 1.0d / splitNum);//步长
         LocalDateTime tmpDateTime = minDateTime;
 
         for(long idx = 1; idx <= splitNum;idx++){
             LocalDateTime plusDateTime = tmpDateTime.plus(step,dateInteval);
             if(idx == splitNum){
-                plusDateTime = maxDateTime;
+                plusDateTime = maxDateTime.plusSeconds(1L);//此处添加1s是为了兼容日期 date >= 'yyyy-MM-dd hh:MM:ss' and date < 'yyyy-MM-dd hh:MM:ss'查询逻辑
             }
             splitResult.put(tmpDateTime, plusDateTime);
 //            log.debug("startTime:{} , endTime:{}",tmpDateTime.format(DATE_FORMATTER),plusDateTime.format(DATE_FORMATTER));
@@ -702,20 +794,24 @@ public class JdbcTest {
 
     }
 
-    private Map<LocalDateTime,LocalDateTime> partitionByDay(LocalDateTime minDateTime, LocalDateTime maxDateTime) {
+    private Map<LocalDateTime,LocalDateTime> datePartition(LocalDateTime minDateTime, LocalDateTime maxDateTime,ChronoUnit chronoUnit) {
         Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
-        long differ = ChronoUnit.DAYS.between(minDateTime, maxDateTime);
-        LongStream.range(0,differ+1).forEach(idx -> {
-            if(idx == 0 ) {
-                splitResult.put(minDateTime, LocalDateTime.of(minDateTime.plusDays(1).toLocalDate(), LocalTime.MIN));
-            }else if(idx == differ) {
-                splitResult.put(LocalDateTime.of(maxDateTime.toLocalDate(), LocalTime.MIN),maxDateTime.plusSeconds(1L));
-            } else {
-                LocalDateTime plusDateTime = minDateTime.plusDays(idx);
-                splitResult.put(LocalDateTime.of(plusDateTime.toLocalDate(), LocalTime.MIN),LocalDateTime.of(plusDateTime.plusDays(1).toLocalDate(), LocalTime.MIN));
+        long differ = chronoUnit.between(minDateTime, maxDateTime);
+        if(differ == 0){//日期间隔未超过一个chronoUnit
+            splitResult.put(minDateTime, maxDateTime);
+        }else {
+            LocalDateTime startTime = minDateTime;
+            LocalDateTime endTime;
+            for(int idx=1;idx<differ+1;idx++){
+                if(idx == differ) {
+                    splitResult.put(startTime,maxDateTime);
+                } else {
+                    endTime = minDateTime.plus(idx,chronoUnit);
+                    splitResult.put(startTime,endTime);
+                    startTime = endTime;
+                }
             }
-        });
-
+        }
 
         return splitResult;
     }
@@ -738,6 +834,7 @@ public class JdbcTest {
         return array;
     }
 
+    @Deprecated
     private void doMergePartition(List<Map.Entry<Timestamp, Long>> dataList , Long threshold) {
 
         long counter = 0L;
@@ -745,7 +842,6 @@ public class JdbcTest {
         LocalDateTime startDateTime = null ;
         LocalDateTime endDateTime = null ;
 
-        //TODO 此处逻辑有问题，GroupBy结果的日期显示的只是单天日期中的一天，而统计值是当天的全部数据
         for(Map.Entry<Timestamp, Long> entry : dataList){
             counter += entry.getValue();
             if(counter >= threshold){
@@ -765,12 +861,23 @@ public class JdbcTest {
 
     }
 
-
-    private void doSplitBigPartition(LocalDateTime startTime, LocalDateTime endTime , Long splitNum,ChronoUnit chronoUnit) {
+    /**
+     * "大日期"分片
+     * TODO 目前大分片只是按照记录量取模后等分,对于短时间数据"洪峰"场景、会出现分片后数据仍然聚集在某一小分片中，需要递归检测分片后结果，直到真正的不存在大分片
+     * @param startTime
+     * @param endTime
+     * @param splitNum
+     * @param chronoUnit
+     * @return
+     */
+    private Map<LocalDateTime, LocalDateTime> doSplitPartition(LocalDateTime startTime, LocalDateTime endTime , Long splitNum, ChronoUnit chronoUnit) {
         log.warn("Find Bigger Partition , Date start: {} , end: {}" , startTime.format(DATE_FORMATTER),endTime.format(DATE_FORMATTER));
         Map<LocalDateTime, LocalDateTime> splitDateMap = partitionByDateInteval(startTime, endTime, splitNum, chronoUnit);
-        splitDateMap.entrySet().stream().forEach(entry -> log.info("Bigger Partition Result ===> , Date start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
+
+        splitDateMap.entrySet().stream().forEach(entry -> log.info("Bigger Partition Result ===> Date start: {} , end: {}" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER)));
+        return splitDateMap;
     }
+
 
     private List<Tuple3<Timestamp,Timestamp,Long>> doMergePartition(List<Long> countList , List<Timestamp> timeList , Long threshold) {
 
@@ -805,19 +912,73 @@ public class JdbcTest {
     }
 
     /**
+     * 小分片合并
+     * @param countList
+     * @param timeList
+     * @param threshold
+     * @return
+     */
+    private List<Tuple3<Timestamp,Timestamp,Long>> doMergePartition2(List<Long> countList , List<Timestamp> timeList , Long threshold) {
+
+        List<Tuple3<Timestamp,Timestamp,Long>> results = new ArrayList<>();
+        long counter = 0L;
+        Timestamp startTs = timeList.get(0);
+
+        //TODO 待实现！！！
+        for(int position=0;position<countList.size();position++){
+            long cnt = countList.get(position);
+            if(cnt >= threshold){
+                //如果当前时间段rowCount已经超限（mergedStopSize），直接分片
+                results.add(new Tuple3<>(timeList.get(position * 2),timeList.get(position * 2 + 1),cnt));
+
+                //判断之前是否有已合并数据
+                if(counter > 0L){
+                    results.add(new Tuple3<>(startTs,timeList.get(position * 2 - 1),cnt));
+                }
+                int nextStartIdx = (position+1) * 2;
+                if(nextStartIdx < timeList.size()){
+                    startTs = timeList.get(nextStartIdx);
+                    counter = 0L;
+                }
+            } else {
+                counter += cnt;
+                if(counter >= threshold){
+                    results.add(new Tuple3<>(startTs,timeList.get(position * 2 - 1),(counter-cnt)));
+                    int nextStartIdx = position * 2;
+                    if(nextStartIdx < timeList.size()){
+                        startTs = timeList.get(position * 2);
+                        counter = cnt;
+                    }
+                }
+            }
+        }
+
+
+        if(counter > 0L){
+            timeList.get(timeList.size() - 1);
+            results.add(new Tuple3<>(startTs,timeList.get(timeList.size() - 1),counter));
+        }
+
+        results.forEach(tp3 -> log.debug("startTime:{} , endTime:{} , counter:{}",DateUtil.parseTs2DateTime(tp3._1()).format(DATE_FORMATTER),DateUtil.parseTs2DateTime(tp3._2()).format(DATE_FORMATTER),tp3._3()));
+
+        return results;
+
+    }
+
+    /**
      * 日期查询条件拆分
      * TODO 优化点：并发查询
-     * @param begin
-     * @param end
+     * @param beginTime
+     * @param endTime
      * @param conn
      * @return
      */
-    private List<Tuple3<Timestamp,Timestamp,Long>> subDateResult(String begin , String end , Connection conn) {
-        LocalDateTime dateTimeStart = LocalDateTime.parse(begin, DATE_FORMATTER);
-        LocalDateTime dateTimeEnd = LocalDateTime.parse(end, DATE_FORMATTER);
+    private List<Tuple3<Timestamp,Timestamp,Long>> subDateResult(String beginTime , String endTime ,ChronoUnit chronoUnit , Connection conn) {
+        LocalDateTime dateTimeStart = LocalDateTime.parse(beginTime, DATE_FORMATTER);
+        LocalDateTime dateTimeEnd = LocalDateTime.parse(endTime, DATE_FORMATTER);
 
         List<Tuple3<Timestamp,Timestamp,Long>> gDateList = new ArrayList<>();
-        Map<LocalDateTime, LocalDateTime> dateSplitResult = partitionByDay(dateTimeStart, dateTimeEnd);
+        Map<LocalDateTime, LocalDateTime> dateSplitResult = datePartition(dateTimeStart, dateTimeEnd,chronoUnit);
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time < ?";
@@ -858,54 +1019,143 @@ public class JdbcTest {
     }
 
 
+    /**
+     * 分片信息检测
+     * @param conn
+     * @return
+     */
+    private List<Tuple3<Timestamp,Timestamp,Long>> partitionDetection(Map<LocalDateTime , LocalDateTime> dateTimeMap , Connection conn) {
 
-    class Range<T> {
-
-        T min;
-
-        T max;
-
-        Long count;
-
-        public Range(T min, T max, Long count) {
-            this.min = min;
-            this.max = max;
-            this.count = count;
+        List<Tuple3<Timestamp,Timestamp,Long>> gDateList = new ArrayList<>();
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time <= ?";
+        try{
+            for(Map.Entry<LocalDateTime,LocalDateTime> entry : dateTimeMap.entrySet()){
+                String queryDateFrom = entry.getKey().format(DATE_FORMATTER);
+                String queryDateTo = entry.getValue().format(DATE_FORMATTER);
+                statement = conn.prepareStatement(sql);
+                statement.setString(1,queryDateFrom);
+                statement.setString(2,queryDateTo);
+                resultSet = statement.executeQuery();
+                Timestamp minTs ;
+                Timestamp maxTs ;
+                Long count;
+                if(resultSet.next()){
+                    minTs = resultSet.getTimestamp(1);
+                    maxTs = resultSet.getTimestamp(2);
+                    count = resultSet.getLong(3);
+                    if(minTs != null && maxTs != null){
+                        gDateList.add(new Tuple3(minTs,maxTs,count));
+                    }
+                }
+            }
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        }finally {
+            if(statement != null) {
+                try {
+                    resultSet.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        public T getMin() {
-            return min;
-        }
-
-        public void setMin(T min) {
-            this.min = min;
-        }
-
-        public T getMax() {
-            return max;
-        }
-
-        public void setMax(T max) {
-            this.max = max;
-        }
-
-        public Long getCount() {
-            return count;
-        }
-
-        public void setCount(Long count) {
-            this.count = count;
-        }
-
-        @Override
-        public String toString() {
-            return "Range{" +
-                    "min=" + min +
-                    ", max=" + max +
-                    ", count=" + count +
-                    '}';
-        }
+        return gDateList;
     }
 
+
+    private void doMain(List<Tuple2<String,String>> resultMap , List<Tuple3<Timestamp,Timestamp,Long>> datePartitionInfo , Long partitionOverflowSize, Long mergedStopSize, Connection conn) {
+
+        //分片日期min/max查询结果 （数据结构： 2N: minDate 2N+1: maxDate）
+        List<Timestamp> queryDateList = new ArrayList<>();
+        //分片日期记录count条数 （数据结构： N: count）
+        List<Long> rowCountList = new ArrayList<>();
+
+        datePartitionInfo.forEach(tp -> {
+            queryDateList.add(tp._1());
+            queryDateList.add(tp._2());
+            rowCountList.add(tp._3());
+        });
+
+
+        //检测大分片 TODO 待优化
+        int position = 0 ,index = 0;
+
+        List<Integer> bigPartDateIndex = new ArrayList<>();
+        for(Long cnt : rowCountList){
+            if(cnt > partitionOverflowSize){
+                bigPartDateIndex.add(index * 2);
+            }
+            index++;
+        }
+
+
+        //TODO 此处逻辑有问题！！！
+        Map<Integer,Integer> dateIndexMap = new LinkedHashMap<>();//"小"分片日期数据区间
+        for(int bIndex : bigPartDateIndex){
+            if(bIndex / 2 > position){
+                dateIndexMap.put(position, bIndex / 2);
+            }
+            position = bIndex / 2 + 1;
+        }
+
+        if(position < rowCountList.size()){
+            dateIndexMap.put(position,rowCountList.size());
+        }
+
+        //尝试小分片合并,减少分片量
+        List<Tuple3<Timestamp,Timestamp,Long>> mergedDateList = null;
+        for(Map.Entry<Integer,Integer> entry : dateIndexMap.entrySet()){
+            try{
+                List<Long> subList = rowCountList.subList(entry.getKey(),entry.getValue());
+                if(subList != null && subList.size() > 0){
+                    List<Timestamp> subTimeList = queryDateList.subList(entry.getKey() * 2, entry.getValue() * 2);
+                    mergedDateList = doMergePartition2(subList,subTimeList,mergedStopSize);
+                    mergedDateList.forEach(tuple -> {
+                        resultMap.add(new Tuple2<>(DateUtil.formatTs(tuple._1(),DATE_FORMATTER),DateUtil.formatTs(tuple._2(),DATE_FORMATTER)));
+                    });
+                }
+            }catch (Exception e) {
+                log.error(e.getMessage());
+            }
+
+        }
+
+        //不存在大分片则退出
+        if(bigPartDateIndex == null || bigPartDateIndex.size() == 0){
+            return ;
+        }
+
+        //拆分大分片
+        Map<LocalDateTime, LocalDateTime> splitDateMap = new LinkedHashMap<>();
+        for(Integer idx : bigPartDateIndex){
+            Long rowCount = rowCountList.get(idx / 2);
+            LocalDateTime minDateTime = DateUtil.parseTs2DateTime(queryDateList.get(idx));
+            LocalDateTime maxDateTime = DateUtil.parseTs2DateTime(queryDateList.get(idx + 1));
+
+            log.warn("Find BIG Partition , Date [{} / {}] ,rowCount:{} " , minDateTime.format(DATE_FORMATTER),maxDateTime.format(DATE_FORMATTER),rowCount);
+
+            //大分片时间降级 （Day -> Hours）
+            //此处要做动态分片单位识别
+
+            //日期分片，最小拆分单位到秒，此处统一采用秒（最小时间单位）进行拆分、可以规避不同维度日期分片（DAYS/HOURS/MINTUS/HOURS）时无法进行动态单位转换的问题
+            long splitNum = (long)Math.ceil(rowCount / (partitionOverflowSize * 1.0D));;
+
+            //todo 此处强制按天拆分是否会有问题！！！ 当初为何这样写？？？
+//            LocalDateTime[] arr = getOneDayRange(queryDateList.get(idx+1),true);//max值
+            Map<LocalDateTime, LocalDateTime> subPartition = partitionByDateInteval(minDateTime, maxDateTime, splitNum, ChronoUnit.SECONDS);
+            subPartition.entrySet().forEach(entry -> {
+                log.info("Sub BIG Partition result : Date [{} / {}]" , entry.getKey().format(DATE_FORMATTER),entry.getValue().format(DATE_FORMATTER));
+            });
+            splitDateMap.putAll(subPartition);
+        }
+
+        //分片结果检测
+        List<Tuple3<Timestamp, Timestamp, Long>> splitPartitionStat = partitionDetection(splitDateMap, conn);
+        doMain(resultMap , splitPartitionStat , partitionOverflowSize , mergedStopSize , conn);
+    }
 
 }
