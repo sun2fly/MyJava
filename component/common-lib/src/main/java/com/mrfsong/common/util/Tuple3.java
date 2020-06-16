@@ -28,7 +28,7 @@ public class Tuple3<T1,T2,T3> extends Tuple2<T1,T2>  {
     public String toString() {
         return "Tuple3{" +
                 "t1=" + _1() +
-                ", t1=" + _2() +
+                ", t2=" + _2() +
                 ", t3=" + t3 +
                 '}';
     }
