@@ -404,7 +404,9 @@ public class JdbcTest {
 
     }
 
-
+    /**
+     * TODO 日期统计结果偏大
+     */
     @Test(timeout = 1000 * 60 * 10)
     public void testDatePartition() {
         //计时器
@@ -441,13 +443,15 @@ public class JdbcTest {
             resultSet.close();
 
             //日期分片统计结果
-            Map<LocalDateTime, LocalDateTime> dayPartitionMap = splitDate(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
+            Map<LocalDateTime, LocalDateTime> dayPartitionMap = splitDateToDay(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
             List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = getPartitionStat(dayPartitionMap,conn);
             /* 分片检测， 大分片识别、大分片拆分、小分片合并 */
             doDatePartition(lastSplitResult,splitDayStatResult,partitionOverflowSize,mergedStopSize,conn);
 
             lastSplitResult.forEach(tp -> log.warn("最终分片结果：{}",tp.toString()));
             log.info("处理完成，耗时 [{}]", stopwatch);
+
+            doCountTest(conn,lastSplitResult);
 
         }catch (Exception e) {
             Assert.fail(Printer.getException(e));
@@ -464,12 +468,50 @@ public class JdbcTest {
         }
     }
 
+    private void doCountTest(Connection conn , List<Tuple3<String,String,Long>> tuple3List) {
+        String sql = "select count(*) from source where create_time >= ? and create_time < ?";
+
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        try{
+            long dbCount = 0L;
+            long pCount = 0L;
+            for(Tuple3<String,String,Long> tuple3 : tuple3List) {
+                statement = conn.prepareStatement(sql);
+                statement.setString(1,tuple3._1());
+                statement.setString(2,tuple3._2());
+                resultSet = statement.executeQuery();
+                if(resultSet.next()){
+                    long aLong = resultSet.getLong(1);
+                    log.warn("startTime : {} , endTime : {} , dbCount: {} , pCount:{}" , tuple3._1(),tuple3._2(),aLong , tuple3._3());
+                    dbCount += aLong;
+                    pCount += tuple3._3();
+                }
+            }
+
+            log.warn("dbTotal:{} ,  pTotal : {}" , dbCount,pCount);
+
+        }catch(Exception e){
+
+        }finally {
+            if(statement != null) {
+                try {
+                    resultSet.close();
+                    statement.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
 
     @Test
     public void testMethod() {
         LocalDateTime startTime = LocalDateTime.parse("2020-06-05 23:10:35", DATE_FORMATTER);
         LocalDateTime endTime = LocalDateTime.parse("2020-06-16 01:00:00", DATE_FORMATTER);
-        Map<LocalDateTime, LocalDateTime> dateTimeMap = splitDate(startTime, endTime, ChronoUnit.DAYS);
+        Map<LocalDateTime, LocalDateTime> dateTimeMap = splitDateToDay(startTime, endTime, ChronoUnit.DAYS);
         dateTimeMap.entrySet().forEach(entry -> {
             log.info("start : {} , end: {}" , entry.getKey().format(DATE_FORMATTER) ,entry.getValue().format(DATE_FORMATTER));
         });
@@ -505,17 +547,18 @@ public class JdbcTest {
      * @param dateInteval
      * @return
      */
-    private Map<LocalDateTime,LocalDateTime> splitDate(LocalDateTime minDateTime, LocalDateTime maxDateTime, ChronoUnit dateInteval) {
+    private Map<LocalDateTime,LocalDateTime> splitDateToDay(LocalDateTime minDateTime, LocalDateTime maxDateTime, ChronoUnit dateInteval) {
         Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
-        long differ = dateInteval.between(minDateTime, maxDateTime);
+        long hours = ChronoUnit.HOURS.between(minDateTime, maxDateTime);
+        long differ = (long)Math.ceil(hours / 24.0d);
         if(differ == 0){//日期间隔未超过一个chronoUnit
-            splitResult.put(minDateTime, maxDateTime);
+            splitResult.put(minDateTime, maxDateTime.plusSeconds(1L));
         }else {
             LocalDateTime startTime = minDateTime;
             LocalDateTime endTime;
             for(int idx=1;idx<differ+1;idx++){
                 if(idx == differ) {
-                    splitResult.put(startTime,maxDateTime);
+                    splitResult.put(startTime,maxDateTime.plusSeconds(1L));
                 } else {
                     endTime = minDateTime.plus(idx,dateInteval);
                     splitResult.put(startTime,endTime);
@@ -591,7 +634,7 @@ public class JdbcTest {
         List<Tuple3<Timestamp,Timestamp,Long>> gDateList = new ArrayList<>();
         PreparedStatement statement = null;
         ResultSet resultSet = null;
-        String sql = "select min(create_time),max(create_time), count(*) from source where create_time >= ? and create_time <= ?";
+        String sql = "select count(*) from source where create_time >= ? and create_time < ?";
         try{
             for(Map.Entry<LocalDateTime,LocalDateTime> entry : dateTimeMap.entrySet()){
                 String queryDateFrom = entry.getKey().format(DATE_FORMATTER);
@@ -600,16 +643,10 @@ public class JdbcTest {
                 statement.setString(1,queryDateFrom);
                 statement.setString(2,queryDateTo);
                 resultSet = statement.executeQuery();
-                Timestamp minTs ;
-                Timestamp maxTs ;
                 Long count;
                 if(resultSet.next()){
-                    minTs = resultSet.getTimestamp(1);
-                    maxTs = resultSet.getTimestamp(2);
-                    count = resultSet.getLong(3);
-                    if(minTs != null && maxTs != null){
-                        gDateList.add(new Tuple3(minTs,maxTs,count));
-                    }
+                    count = resultSet.getLong(1);
+                    gDateList.add(new Tuple3(DateUtil.parse2Ts(queryDateFrom,DATE_FORMATTER),DateUtil.parse2Ts(queryDateTo,DATE_FORMATTER),count));
                 }
             }
         }catch (Exception e) {

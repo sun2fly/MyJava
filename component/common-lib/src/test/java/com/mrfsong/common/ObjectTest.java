@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -143,8 +142,8 @@ public class ObjectTest {
 
     @Test
     public void testDateTime () {
-        LocalDateTime startTime = LocalDateTime.parse("2020-03-01 01:00:00", DATE_FORMATTER);
-        LocalDateTime endTime = LocalDateTime.parse("2020-06-02 00:00:00", DATE_FORMATTER);
+        LocalDateTime startTime = LocalDateTime.parse("2020-06-01 00:00:00", DATE_FORMATTER);
+        LocalDateTime endTime = LocalDateTime.parse("2020-06-10 00:00:00", DATE_FORMATTER);
 
         /*long hours = ChronoUnit.HOURS.between(startTime, endTime);
         long halfDays = ChronoUnit.HALF_DAYS.between(startTime, endTime);
@@ -155,8 +154,8 @@ public class ObjectTest {
         log.info("hours:{} , halfDays:{} , days:{} , months:{} , years:{}" , hours,halfDays,days,months,years);*/
 
 
-        Duration duration = ChronoUnit.DAYS.getDuration();
-        log.info("Hours : {}" , duration.toHours());
+        long days = ChronoUnit.DAYS.between(startTime, endTime);
+        log.info("Days : {}" , days);
 
 
     }
