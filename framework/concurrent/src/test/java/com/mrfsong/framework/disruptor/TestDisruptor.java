@@ -29,13 +29,13 @@ public class TestDisruptor {
      */
     @Test
     public void singleWithApi() throws Exception  {
-        RingBuffer<MessageEvent> ringBuffer = RingBuffer.createSingleProducer(new EventFactory<MessageEvent>() {
+        final RingBuffer<MessageEvent> ringBuffer = RingBuffer.createSingleProducer(new EventFactory<MessageEvent>() {
             @Override
             public MessageEvent newInstance() {
                 return new MessageEvent();
             }
         } , getRingBufferSize(TOTAL) , new YieldingWaitStrategy());
-        SequenceBarrier barrier = ringBuffer.newBarrier();
+        final SequenceBarrier barrier = ringBuffer.newBarrier();
         Thread producer = new Thread(new Runnable() {
             @Override
             public void run() {

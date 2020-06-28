@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>concurrent-framework</artifactId>
+    <artifactId>concurrent</artifactId>
     <packaging>jar</packaging>
 
-    <name>concurrent-framework</name>
+    <name>concurrent</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -108,5 +108,7 @@
                 <directory>src/test/resources/${env}</directory>
             </testResource>
         </testResources>
+
+
     </build>
 </project>

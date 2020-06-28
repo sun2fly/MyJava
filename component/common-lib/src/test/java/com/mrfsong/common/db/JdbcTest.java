@@ -11,7 +11,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,32 +31,23 @@ import static com.github.jsonzou.jmockdata.JMockData.mock;
 @Slf4j
 public class JdbcTest {
 
-    private static Integer BULK_SIZE = 50000;
+    private static Integer BULK_SIZE = 2000;
     private static Integer QUERY_BATCH_SIZE = 1000000;
+    private static Integer MOCK_TOTAL = 500000;//mock数据总量
     private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    Properties dbProperties;
 
     MockConfig mockConfig;
 
-    AtomicLong counter = new AtomicLong(29665728L);
+    AtomicLong keyCounter = new AtomicLong(29665728L);
 
     @Before
     public void prepare() {
-        try(InputStream resourceAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties");){
-            dbProperties = new Properties();
-            dbProperties.load(resourceAsStream);
-
-        }catch (Exception e) {
-            Assert.fail(e.getMessage());
-        }
-
         mockConfig = new MockConfig()
                 .doubleRange(1.0d,9999.99999d)
                 .floatRange(1.11111f,9999.99999f)
                 .decimalScale(3) // 设置小数位数为3，默认是2
-                .dateRange("2020-06-16 00:00:00","2020-06-16 00:01:00")
-                .intRange(30,100)
+                .dateRange("2020-06-23 13:00:00","2020-06-23 13:00:05")
+                .intRange(20,100)
 //                .setEnabledCircle(false)
 //                .stringRegex("mock-")
                 .globalConfig();
@@ -326,22 +316,27 @@ public class JdbcTest {
 
     }
 
-    /**
-     * TODO 如何处理Mock数据重复问题
-     */
     @Test
     public void mockData(){
 
         Connection conn = null;
         PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
 //            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&cachePrepStmts=true&useServerPrepStmts=true","root","root");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
-            preparedStatement = conn.prepareStatement("insert into `dcomb`.`source`(id,`name`,age,create_time) values (? , ? , ? , ?)");
+            preparedStatement = conn.prepareStatement("select max(id) from `source`");
+            resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()){
+                keyCounter.set(resultSet.getLong(1));
+            }
+            resultSet.close();
+
+            preparedStatement = conn.prepareStatement("insert into `source`(id,`name`,age,create_time) values (? , ? , ? , ?)");
             Stopwatch stopwatch = Stopwatch.createStarted();
-            for(int i=0;i< 3000000;i++){
-                preparedStatement.setLong(1,counter.incrementAndGet());
+            for(int i=0;i< MOCK_TOTAL;i++){
+                preparedStatement.setLong(1, keyCounter.incrementAndGet());
                 preparedStatement.setString(2,getUUID());
                 preparedStatement.setInt(3,mock(Integer.class,mockConfig));
                 preparedStatement.setTimestamp(4,mock(Timestamp.class,mockConfig));
@@ -355,7 +350,7 @@ public class JdbcTest {
 
             preparedStatement.executeBatch();
             preparedStatement.clearBatch();
-            log.warn("prepareStatementBatch 消耗时间:" + stopwatch);
+            log.warn("MockData 耗时:" + stopwatch);
         }catch (Exception e) {
             Assert.fail(Printer.getException(e));
         } finally {
@@ -410,7 +405,7 @@ public class JdbcTest {
     @Test(timeout = 1000 * 60 * 10)
     public void testDatePartition() {
         //计时器
-        Stopwatch stopwatch = Stopwatch.createStarted();
+
 
         Connection conn = null;
         Statement statement = null;
@@ -429,6 +424,7 @@ public class JdbcTest {
         List<Tuple3<String,String,Long>> lastSplitResult = new ArrayList<>();//最终日期分片结果
 
         try {
+            Stopwatch stopwatch = Stopwatch.createStarted();
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             statement = conn.createStatement();
@@ -441,15 +437,21 @@ public class JdbcTest {
                 maxDate = resultSet.getTimestamp(2);
             }
             resultSet.close();
+            log.info("[step1] Min/Max日期查询耗时：{}" , stopwatch);
 
             //日期分片统计结果
             Map<LocalDateTime, LocalDateTime> dayPartitionMap = splitDateToDay(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
+            log.info("[step2] Min/Max日期分片耗时：{}" , stopwatch);
+
             List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = getPartitionStat(dayPartitionMap,conn);
+            log.info("[step3] 分片日期查询统计耗时：{}" , stopwatch);
+
             /* 分片检测， 大分片识别、大分片拆分、小分片合并 */
             doDatePartition(lastSplitResult,splitDayStatResult,partitionOverflowSize,mergedStopSize,conn);
+            log.info("[step4] 分片合并/拆分耗时：{}" , stopwatch);
 
             lastSplitResult.forEach(tp -> log.warn("最终分片结果：{}",tp.toString()));
-            log.info("处理完成，耗时 [{}]", stopwatch);
+            log.info("处理完成，总耗时 [{}]", stopwatch);
 
             doCountTest(conn,lastSplitResult);
 
