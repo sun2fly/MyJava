@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -142,8 +143,8 @@ public class ObjectTest {
 
     @Test
     public void testDateTime () {
-        LocalDateTime startTime = LocalDateTime.parse("2020-06-01 00:00:00", DATE_FORMATTER);
-        LocalDateTime endTime = LocalDateTime.parse("2020-06-10 00:00:00", DATE_FORMATTER);
+        LocalDateTime startTime = LocalDateTime.parse("2020-06-20 13:02:08", DATE_FORMATTER);
+        LocalDateTime endTime = LocalDateTime.parse("2020-06-23 00:00:02", DATE_FORMATTER);
 
         /*long hours = ChronoUnit.HOURS.between(startTime, endTime);
         long halfDays = ChronoUnit.HALF_DAYS.between(startTime, endTime);
@@ -154,9 +155,23 @@ public class ObjectTest {
         log.info("hours:{} , halfDays:{} , days:{} , months:{} , years:{}" , hours,halfDays,days,months,years);*/
 
 
-        long days = ChronoUnit.DAYS.between(startTime, endTime);
-        log.info("Days : {}" , days);
 
+
+
+        //min time of Day
+        LocalDateTime startOfDay = startTime.toLocalDate().atStartOfDay();
+        LocalDateTime atDayMin = startTime.toLocalDate().atTime(LocalTime.MIN);
+        LocalDateTime dayMin = LocalDateTime.of(startTime.toLocalDate(), LocalTime.MIN);
+        LocalDateTime midnight = LocalDateTime.of(startTime.toLocalDate(), LocalTime.MIDNIGHT);
+
+
+        //max time of Day
+        LocalDateTime dayMax = endTime.toLocalDate().atTime(LocalTime.MAX);
+
+
+        long days = ChronoUnit.DAYS.between(dayMin,dayMax);
+        long hours = ChronoUnit.HOURS.between(dayMin, dayMax);
+        log.info("Days : {} , Hours : {}" , days,hours);
 
     }
 
@@ -254,6 +269,11 @@ public class ObjectTest {
         double var2= 1160358 / (1000000 * 1.0d);
 
         log.info("var1: {} , var2:{}" , var1, var2);
+
+
+        int i = 1 << 16 + 52;
+        int j = 2 << 16 + 53;
+        log.info("i: {} , j:{}" , i ,j );
     }
 
 
