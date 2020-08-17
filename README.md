@@ -97,6 +97,10 @@
 
 
  > Common lib
+   * utils
+   * sql parser
+   * serializer && deserializer
+   * ...
 
  > Docker
 

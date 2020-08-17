@@ -5,6 +5,8 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.hash.BloomFilter;
+import com.mrfsong.common.model.Group;
+import com.mrfsong.common.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
@@ -274,6 +276,35 @@ public class ObjectTest {
         int i = 1 << 16 + 52;
         int j = 2 << 16 + 53;
         log.info("i: {} , j:{}" , i ,j );
+    }
+
+    @Test
+    public void testObjRef() {
+
+        List<String> list = Lists.newArrayList("a","b","c");
+        User user = new User();
+        user.setAge(35);
+        user.setName("zangsan");
+        user.setAddress("beijing");
+        user.setList(Lists.newArrayList(list));
+
+
+        log.info("User : {}" , user.toString());
+
+
+        Group group = new Group("group1",user);
+        group.getUser().setName("lisi");
+
+        list.clear();
+
+        log.info("User : {}" , user.toString());
+
+
+
+
+
+
+
     }
 
 

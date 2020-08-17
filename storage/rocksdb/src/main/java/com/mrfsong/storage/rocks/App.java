@@ -1,4 +1,4 @@
-package com.mrfsong.storage.rocks;
+package com.mrfsong.storage.ehcache;
 
 import org.rocksdb.Options;
 import org.rocksdb.RocksDB;

@@ -1,7 +1,7 @@
-package com.mrfsong.storage.rocks;
+package com.mrfsong.storage.ehcache;
 
-import com.mrfsong.storage.rocks.serialize.JavaSerializer;
-import com.mrfsong.storage.rocks.vo.User;
+import com.mrfsong.storage.ehcache.serialize.JavaSerializer;
+import com.mrfsong.storage.ehcache.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.rocksdb.*;

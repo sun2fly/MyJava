@@ -11,6 +11,7 @@
     <modules>
         <module>rocksdb</module>
         <module>h2db</module>
+        <module>ehcache</module>
     </modules>
 
     <dependencyManagement>
@@ -23,13 +24,23 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- other dependencies -->
+            <!-- rocksdb dependencies -->
             <dependency>
                 <groupId>org.rocksdb</groupId>
                 <artifactId>rocksdbjni</artifactId>
                 <version>6.7.3</version>
             </dependency>
 
+
+            <!-- ehcache dependencies-->
+            <dependency>
+                <groupId>org.ehcache</groupId>
+                <artifactId>ehcache</artifactId>
+                <version>3.8.1</version>
+            </dependency>
+
+
+            <!-- h2db dependencies-->
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>

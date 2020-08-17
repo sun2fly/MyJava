@@ -12,6 +12,7 @@
 
     <modules>
         <module>common-lib</module>
+        <module>serialize</module>
         <module>sql-parser</module>
     </modules>
 

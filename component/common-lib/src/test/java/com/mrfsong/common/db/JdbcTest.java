@@ -33,7 +33,7 @@ public class JdbcTest {
 
     private static Integer BULK_SIZE = 2000;
     private static Integer QUERY_BATCH_SIZE = 1000000;
-    private static Integer MOCK_TOTAL = 500000;//mock数据总量
+    private static Integer MOCK_TOTAL = 3123436;//mock数据总量
     private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     MockConfig mockConfig;
@@ -46,7 +46,7 @@ public class JdbcTest {
                 .doubleRange(1.0d,9999.99999d)
                 .floatRange(1.11111f,9999.99999f)
                 .decimalScale(3) // 设置小数位数为3，默认是2
-                .dateRange("2020-06-23 13:00:00","2020-06-23 13:00:05")
+                .dateRange("2020-06-01 00:00:00","2020-07-01 00:00:00")
                 .intRange(20,100)
 //                .setEnabledCircle(false)
 //                .stringRegex("mock-")
