@@ -1,10 +1,12 @@
-package com.mrfsong.common;
+package com.mrfsong.cache.ehcache;
+
 
 import com.google.common.base.Strings;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalListener;
+import com.mrfsong.cache.ehcache.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,14 +17,15 @@ import java.util.stream.IntStream;
 
 /**
  * <p>
- * 本地缓存测试用例
- * </P>
+ *      ehcache用法测试
+ * </p>
  *
- * @Author songfei20
- * @Date 2020/4/9
+ * @Author: Felix
+ * @Created: 2020/08/10 10:15
  */
 @Slf4j
-public class LocalCacheTest {
+public class CacheTest {
+
 
     @Test
     public void testGuavaCache() throws Exception{
@@ -65,7 +68,7 @@ public class LocalCacheTest {
                 })
                 .expireAfterWrite(30, TimeUnit.MINUTES)
                 .build(new CacheLoader<String, String>() {
-                    //默认的数据加载实现,当调用get取值的时候,如果key没有对应的值,就调用这个方法进行加载
+                    //默认的数据加载实现,当调用get取值的时候,如果key没有对应的值,就调用这个方法进行加载，load操作时为阻塞操作
                     @Override
                     public String load(String key) throws Exception {
                         log.warn("key:[{}] not exists , begin to loading ..." , key);
@@ -96,6 +99,59 @@ public class LocalCacheTest {
         log.info("External of String : {}",GraphLayout.parseInstance(strValue).toPrintable());
 
         log.info("List total size :　{}",GraphLayout.parseInstance(valList).totalSize());*/
+
+
+
+    }
+
+    @Test
+    public void testObjectKeyWithGuava() throws Exception {
+
+        LoadingCache<User, String> localCache = CacheBuilder.newBuilder()
+                .initialCapacity(10)
+                .maximumSize(100L)
+                .concurrencyLevel(3)
+                .recordStats()
+                .removalListener((RemovalListener<User, String>) notification -> {
+                    log.warn("key:[{}] is removed ...",notification.getKey());
+
+
+                    switch (notification.getCause()) {
+                        //The entry was manually removed by the user
+                        case EXPLICIT:
+                            break;
+
+                        //The entry itself was not actually removed, but its value was replaced by the user
+                        case REPLACED:
+                            break;
+
+                        //The entry was removed automatically because its key or value was garbage-collected
+                        case COLLECTED:
+                            break;
+
+                        //The entry's expiration timestamp has passed
+                        case EXPIRED:
+                            break;
+
+                        //The entry was evicted due to size constraints
+                        case SIZE:
+                            break;
+
+                        default:
+                            break;
+
+                    }
+                })
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .build(new CacheLoader<User, String>() {
+                    //默认的数据加载实现,当调用get取值的时候,如果key没有对应的值,就调用这个方法进行加载
+                    @Override
+                    public String load(User key) throws Exception {
+                        log.warn("key:[{}] not exists , begin to loading ..." , key);
+                        return "initVal_" + (System.currentTimeMillis());
+                    }
+                });
+
 
 
 
