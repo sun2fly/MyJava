@@ -1,19 +1,22 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>m-java</artifactId>
+        <artifactId>cache</artifactId>
         <groupId>com.mrfsong</groupId>
-        <version>1.0.1-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>data-structure</artifactId>
-    <name>data-structure module</name>
-    <description>Data structure by Java </description>
 
+    <artifactId>h2db</artifactId>
+    <packaging>jar</packaging>
 
+    <name>h2db</name>
+    <url>http://maven.apache.org</url>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
 
     <profiles>
         <profile>
@@ -38,18 +41,12 @@
     </profiles>
 
     <dependencies>
-
-        <dependency>
-            <groupId>com.mrfsong</groupId>
-            <artifactId>common-lib</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
+        <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
-
+        <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -72,22 +69,24 @@
             <artifactId>guava</artifactId>
         </dependency>
 
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.200</version>
+        </dependency>
+
+
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>com.github.jsonzou</groupId>
             <artifactId>jmockdata</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>8.0.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -96,9 +95,14 @@
             <artifactId>jol-core</artifactId>
             <scope>test</scope>
         </dependency>
+
+
     </dependencies>
+
+    
+
     <build>
-        <finalName>data-structure</finalName>
+        <finalName>h2db</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

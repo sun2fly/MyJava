@@ -300,11 +300,25 @@ public class ObjectTest {
         log.info("User : {}" , user.toString());
 
 
+        rtn();
 
 
 
 
 
+
+
+
+
+    }
+
+    private String rtn() {
+
+        try{
+            return "I'm ok.";
+        }finally {
+            log.info("========= 倔强的finally =========");
+        }
     }
 
 
