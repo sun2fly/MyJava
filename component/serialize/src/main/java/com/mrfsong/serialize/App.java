@@ -1,4 +1,4 @@
-package com.mrfsong.sql;
+package com.mrfsong.serialize;
 
 /**
  * Hello world!

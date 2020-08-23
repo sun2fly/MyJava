@@ -1,6 +1,5 @@
-package com.mrfsong.storage.ehcache.serialize;
+package com.mrfsong.serialize;
 
-import com.mrfsong.storage.ehcache.Serializer;
 
 /**
  * <p>

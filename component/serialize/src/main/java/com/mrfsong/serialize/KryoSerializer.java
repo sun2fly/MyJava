@@ -1,6 +1,6 @@
 package com.mrfsong.storage.ehcache.serialize;
 
-import com.mrfsong.storage.ehcache.Serializer;
+import com.mrfsong.serialize.Serializer;
 import lombok.extern.slf4j.Slf4j;
 
 /**

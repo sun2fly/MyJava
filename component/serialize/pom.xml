@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sql-parser</artifactId>
+    <artifactId>serialize</artifactId>
     <packaging>jar</packaging>
 
-    <name>sql-parser</name>
+    <name>serialize</name>
     <url>http://maven.apache.org</url>
 
     <properties>
@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.mrfsong</groupId>
             <artifactId>common-lib</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
@@ -138,7 +138,7 @@
     
 
     <build>
-        <finalName>sql-parser</finalName>
+        <finalName>serialize</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
