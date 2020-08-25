@@ -222,7 +222,7 @@ public class GuavaCacheTest {
         localCache.put(new User("u1",28),"hello");
         localCache.put(new User("u2",30),"hello2");
 
-        //TODO 此处返回NULL
+        //Guava默认使用内置的hashCode算法实现，直接使用时、即使KEY对象自身已经实现了equals & hashCode方法，仍然无法Get到缓存数据
         String localCacheIfPresent = localCache.getIfPresent(new User("u1", 28));
         Assert.assertEquals("hello",localCacheIfPresent);
         log.info("================== Cache stats:{} ==================",localCache.stats().toString());
