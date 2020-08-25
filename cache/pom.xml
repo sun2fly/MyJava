@@ -12,7 +12,7 @@
         <module>rocksdb</module>
         <module>h2db</module>
         <module>ehcache</module>
-        <module>guava</module>
+        <module>guava_cache</module>
     </modules>
 
     <dependencyManagement>

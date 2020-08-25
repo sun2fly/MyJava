@@ -1,4 +1,4 @@
-package com.mrfsong.cache.ehcache.serial;
+package com.mrfsong.cache.eh.serial;
 
 
 import lombok.extern.slf4j.Slf4j;

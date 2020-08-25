@@ -1,7 +1,7 @@
-package com.mrfsong.cache.ehcache;
+package com.mrfsong.cache.eh;
 
 import com.google.gson.Gson;
-import com.mrfsong.cache.ehcache.vo.User;
+import com.mrfsong.cache.eh.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
@@ -25,6 +25,7 @@ import org.ehcache.impl.persistence.DefaultLocalPersistenceService;
 import org.ehcache.impl.serialization.CompactJavaSerializer;
 import org.ehcache.spi.loaderwriter.CacheLoaderWriter;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -395,6 +396,34 @@ public class EhCacheTest {
 
     }
 
+
+    @Test
+    public void withObjectKey() throws Exception {
+
+        ResourcePools cachePoolConfig = ResourcePoolsBuilder.newResourcePoolsBuilder()
+                .heap(100, EntryUnit.ENTRIES)
+                .offheap(1,MemoryUnit.MB)
+                .build();
+
+        CacheManager cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
+                .withCache("objectCache",
+                        CacheConfigurationBuilder.newCacheConfigurationBuilder(User.class, String.class,cachePoolConfig)
+                                .withExpiry(ExpiryPolicyBuilder.timeToLiveExpiration(Duration.ofSeconds(60L)))
+                )
+                .using(new DefaultStatisticsService())
+                .build(true);
+
+        //EhCache存储时、会直接使用KEY的hashCode值
+        Cache<User, String> objectCache = cacheManager.getCache("objectCache", User.class, String.class);
+        objectCache.put(new User("u1",28),"u1");
+        objectCache.put(new User("u2",30),"u2");
+
+        User u1 = new User("u1",28);
+        String u1Val = objectCache.get(u1);
+        Assert.assertEquals("u1",u1Val);
+
+        cacheManager.close();
+    }
 
 
 

@@ -1,4 +1,6 @@
-package com.mrfsong.cache.ehcache.vo;
+package com.mrfsong.cache.eh.vo;
+
+import com.google.common.base.Objects;
 
 import java.io.Serializable;
 import java.util.StringJoiner;
@@ -46,5 +48,19 @@ public class User implements Serializable {
                 .add("name='" + name + "'")
                 .add("age=" + age)
                 .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equal(name, user.name) &&
+                Objects.equal(age, user.age);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, age);
     }
 }

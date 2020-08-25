@@ -1,6 +1,10 @@
-package com.mrfsong.cache.ehcache.vo;
+package com.mrfsong.cache.guava.vo;
+
+import com.google.common.base.Objects;
+import com.google.common.hash.Hashing;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.StringJoiner;
 
 /**
@@ -46,5 +50,21 @@ public class User implements Serializable {
                 .add("name='" + name + "'")
                 .add("age=" + age)
                 .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equal(name, user.name) &&
+                Objects.equal(age, user.age);
+    }
+
+    @Override
+    public int hashCode() {
+        String contactStr = name + "|" + age;
+        return Math.abs(Hashing.murmur3_32().hashString(contactStr, StandardCharsets.UTF_8).asInt());
+//        return Objects.hashCode(name, age);
     }
 }
