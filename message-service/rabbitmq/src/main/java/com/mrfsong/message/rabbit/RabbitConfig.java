@@ -1,4 +1,4 @@
-package com.mrfsong.message;
+package com.mrfsong.message.rabbit;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

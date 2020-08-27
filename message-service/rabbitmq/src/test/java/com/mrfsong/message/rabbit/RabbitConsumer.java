@@ -1,7 +1,7 @@
-package com.mrfsong.message;
+package com.mrfsong.message.rabbit;
 
-import com.mrfsong.message.base.TestBase;
-import com.mrfsong.message.worker.Receiver;
+import com.mrfsong.message.rabbit.base.TestBase;
+import com.mrfsong.message.rabbit.worker.Receiver;
 import org.junit.Test;
 
 /**

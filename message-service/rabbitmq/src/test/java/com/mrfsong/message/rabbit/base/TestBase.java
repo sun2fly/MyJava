@@ -1,6 +1,6 @@
-package com.mrfsong.message.base;
+package com.mrfsong.message.rabbit.base;
 
-import com.mrfsong.message.RabbitConfig;
+import com.mrfsong.message.rabbit.RabbitConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 

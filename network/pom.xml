@@ -4,7 +4,7 @@
     <groupId>com.mrfsong</groupId>
     <artifactId>network</artifactId>
     <version>1.0.0</version>
-    <name>framework</name>
+    <name>network</name>
     <description>java framework</description>
     <packaging>pom</packaging>
 

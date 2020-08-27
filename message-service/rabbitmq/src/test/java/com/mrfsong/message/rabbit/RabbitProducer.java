@@ -1,8 +1,8 @@
-package com.mrfsong.message;
+package com.mrfsong.message.rabbit;
 
-import com.mrfsong.message.base.TestBase;
-import com.mrfsong.message.vo.UserMessage;
-import com.mrfsong.message.worker.ExchangeSender;
+import com.mrfsong.message.rabbit.base.TestBase;
+import com.mrfsong.message.rabbit.vo.UserMessage;
+import com.mrfsong.message.rabbit.worker.ExchangeSender;
 import com.rabbitmq.client.BuiltinExchangeType;
 import org.junit.Test;
 

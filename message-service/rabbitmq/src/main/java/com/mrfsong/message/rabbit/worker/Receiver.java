@@ -1,6 +1,6 @@
-package com.mrfsong.message.worker;
+package com.mrfsong.message.rabbit.worker;
 
-import com.mrfsong.message.RabbitConfig;
+import com.mrfsong.message.rabbit.RabbitConfig;
 import com.rabbitmq.client.*;
 import lombok.Getter;
 import lombok.Setter;
