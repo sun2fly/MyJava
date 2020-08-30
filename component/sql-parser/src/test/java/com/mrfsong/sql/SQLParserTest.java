@@ -325,4 +325,16 @@ public class SQLParserTest {
         }
     }
 
+
+    @Test
+    public void testParser() {
+
+        try {
+           CCJSqlParserUtil.parseExpression("select * from open-lpc_1.product");
+        } catch (JSQLParserException e) {
+            e.printStackTrace();
+        }
+
+    }
+
 }

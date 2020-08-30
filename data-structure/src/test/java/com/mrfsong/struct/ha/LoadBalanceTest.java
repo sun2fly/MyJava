@@ -2,12 +2,15 @@ package com.mrfsong.struct.ha;
 
 import com.github.jsonzou.jmockdata.MockConfig;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Range;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -24,6 +27,7 @@ import static com.github.jsonzou.jmockdata.JMockData.mock;
  * 负载均衡算法
  */
 @Slf4j
+@RunWith(Parameterized.class)
 public class LoadBalanceTest {
 
 
@@ -40,6 +44,11 @@ public class LoadBalanceTest {
 
     List<String> mockKeyList = new ArrayList<>(keySize);
 
+    @Parameterized.Parameters
+    public static Object[][] data() {
+        return new Object[1000][0]; // repeat count which you want
+    }
+
 
     @Before
     public void prepare() {
@@ -48,8 +57,9 @@ public class LoadBalanceTest {
                 .floatRange(1.11111f,9999.99999f)
                 .decimalScale(3) // 设置小数位数为3，默认是2
                 .dateRange("2020-06-01 00:00:00","2020-07-01 00:00:00")
-                .intRange(20,100)
+                .intRange(0,255)
                 .globalConfig();
+
 
 
         //mock数据
@@ -122,6 +132,59 @@ public class LoadBalanceTest {
 
     }
 
+
+    /**
+     * 测试分片区间
+     * @throws Exception
+     */
+    @Test
+    public void testRange() throws Exception {
+
+        int hostNum = 32;        //主机数量
+        int maxPartition = 256 ;//最大数据分片数量
+        int hashCode = mock(Integer.class,mockConfig);     //分片字段hash值
+
+
+
+        //1. 确定数据分片大小
+        int partitionSize = (maxPartition % hostNum == 0) ? (maxPartition / hostNum) : (maxPartition / hostNum) + 1;
+
+
+        //2. 划分数据key区间范围
+        Map<Integer, Range<Integer>> keyGroupMap = Maps.newHashMap();
+        for(int i=0;i<hostNum;i++){
+            keyGroupMap.put(i , Range.closedOpen(i * partitionSize, (i + 1) * partitionSize));
+        }
+
+        //3. 确定分片下标号
+        int keyIndex = hashCode % maxPartition;
+
+//        log.info("zero hash : {}" , 255 % maxPartition);
+
+
+        //4. 定位数据KEY存储目标主机
+        int hostIndex = 0 ;
+        for(Map.Entry<Integer,Range<Integer>> entry : keyGroupMap.entrySet()){
+            Range<Integer> range = entry.getValue();
+            if(range != null && (range.contains(keyIndex))){
+                hostIndex = entry.getKey();
+                break;
+            }
+        }
+
+        log.info("1# host num : {} , partitionSize:{}, hashCode : {} , target host : {}" ,hostNum ,partitionSize,  hashCode , hostIndex);
+
+
+        //KEY: partitionNo VALUE: hostId
+        Map<Integer,Integer> partitionHostMap = Maps.newHashMap();
+        for(int i=0;i < maxPartition;i++){
+            partitionHostMap.put(i, i / partitionSize);
+        }
+        hostIndex = partitionHostMap.get(keyIndex);
+        log.info("2# host num : {} , partitionSize:{}, hashCode : {} , target host : {}" ,hostNum ,partitionSize,  hashCode , hostIndex);
+
+
+    }
 
 
     private String getUuid(){

@@ -1,4 +1,4 @@
-package com.mrfsong.message;
+package com.mrfsong.message.rabbit;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.BuiltinExchangeType;

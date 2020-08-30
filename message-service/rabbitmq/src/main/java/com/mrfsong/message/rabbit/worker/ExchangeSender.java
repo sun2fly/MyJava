@@ -1,7 +1,7 @@
-package com.mrfsong.message.worker;
+package com.mrfsong.message.rabbit.worker;
 
-import com.mrfsong.message.ExchangeConfig;
-import com.mrfsong.message.RabbitConfig;
+import com.mrfsong.message.rabbit.ExchangeConfig;
+import com.mrfsong.message.rabbit.RabbitConfig;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
