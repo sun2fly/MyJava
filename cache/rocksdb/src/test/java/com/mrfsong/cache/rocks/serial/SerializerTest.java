@@ -1,11 +1,11 @@
-package com.mrfsong.storage.ehcache.serial;
+package com.mrfsong.cache.rocks.serial;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.mrfsong.storage.ehcache.vo.User;
+import com.mrfsong.cache.rocks.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Before;

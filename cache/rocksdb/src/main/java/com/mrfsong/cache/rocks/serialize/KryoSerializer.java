@@ -1,18 +1,19 @@
-package com.mrfsong.storage.ehcache.serialize;
+package com.mrfsong.cache.rocks.serialize;
 
-import com.mrfsong.storage.ehcache.Serializer;
+import com.mrfsong.cache.rocks.Serializer;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>
- * Protocol Buffer序列化
+ *      kryo序列化实现
  * </P>
  *
  * @Author songfei20
  * @Date 2020/4/27
  */
 @Slf4j
-public class ProtocolBufferSerializer<T> implements Serializer<T> {
+public class KryoSerializer<T> implements Serializer<T> {
+
     @Override
     public byte[] serialize(T t) throws Exception {
         return new byte[0];

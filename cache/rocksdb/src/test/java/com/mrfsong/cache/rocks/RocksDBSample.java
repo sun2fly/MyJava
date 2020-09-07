@@ -1,4 +1,4 @@
-package com.mrfsong.storage.ehcache;// Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
+package com.mrfsong.cache.rocks;// Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
 //  This source code is licensed under both the GPLv2 (found in the
 //  COPYING file in the root directory) and Apache 2.0 License
 //  (found in the LICENSE.Apache file in the root directory).
@@ -85,10 +85,6 @@ public class RocksDBSample {
 
       options.setRateLimiter(rateLimiter);
 
-      //WAL文件清理策略
-      options.setWalTtlSeconds(60 * 1L);
-      options.setWalSizeLimitMB(100L);
-
       final BlockBasedTableConfig table_options = new BlockBasedTableConfig();
       table_options.setBlockCacheSize(64 * SizeUnit.KB)
           .setFilter(bloomFilter)
@@ -98,23 +94,7 @@ public class RocksDBSample {
           .setCacheIndexAndFilterBlocks(true)
           .setHashIndexAllowCollision(false)
           .setBlockCacheCompressedSize(64 * SizeUnit.KB)
-          .setBlockCacheCompressedNumShardBits(10)
-      ;
-
-
-      SstFileManager sstFileManager = null;
-      try {
-        //设置sst文件可使用最大磁盘空间大小
-        sstFileManager = new SstFileManager(Env.getDefault());
-        sstFileManager.setMaxAllowedSpaceUsage(1024 * 1024 * 1024 * 10);//unit:byte
-        options.setSstFileManager(sstFileManager);
-      } catch (RocksDBException e) {
-        e.printStackTrace();
-      }
-
-
-
-
+          .setBlockCacheCompressedNumShardBits(10);
 
       assert (table_options.blockCacheSize() == 64 * SizeUnit.KB);
       assert (table_options.cacheNumShardBits() == 6);
@@ -127,20 +107,6 @@ public class RocksDBSample {
 
       options.setTableFormatConfig(table_options);
       assert (options.tableFactoryName().equals("BlockBasedTable"));
-
-
-      //checkpoint操作
-      try (final RocksDB db = RocksDB.open(options, db_path)) {
-        try (final Checkpoint checkpoint = Checkpoint.create(db)) {
-          checkpoint.createCheckpoint(db_path + "/snapshot1");
-          db.put("key2".getBytes(), "value2".getBytes());
-          checkpoint.createCheckpoint(db_path + "/snapshot2");
-        }
-      }catch (RocksDBException e){
-
-      }
-
-
 
       try (final RocksDB db = RocksDB.open(options, db_path)) {
         db.put("hello".getBytes(), "world".getBytes());

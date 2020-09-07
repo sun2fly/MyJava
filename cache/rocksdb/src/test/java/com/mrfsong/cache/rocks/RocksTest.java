@@ -1,12 +1,16 @@
-package com.mrfsong.storage.ehcache;
+package com.mrfsong.cache.rocks;
 
-import com.mrfsong.storage.ehcache.serialize.JavaSerializer;
-import com.mrfsong.storage.ehcache.vo.User;
+import com.mrfsong.cache.rocks.serialize.JavaSerializer;
+import com.mrfsong.cache.rocks.vo.User;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.After;
 import org.junit.Test;
 import org.rocksdb.*;
+import org.rocksdb.util.SizeUnit;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -32,19 +36,31 @@ public class RocksTest {
     }
 
 
-    private static final String ROCKS_DB_PATH = "D:\\data\\rocksdb";
-    private static final String ROCKS_DB_COLUMN_FAMILY = "TEST_CF";
+    private static final String ROCKS_DB_PATH = "/tmp/rocksdb2";
+    private static final String ROCKS_DB_COLUMN_FAMILY = "TEST";
 
-    public String getCurrDateTimeFormat() {
+    private String getCurrDateTimeFormat() {
         LocalDateTime now = LocalDateTime.now();
         return now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 
 //    @Before
-    public void resetDB() {
+    public void init() throws Exception {
         log.warn("==================== Begin to reset rocksdb ==========");
 
+        //遍历所有CF
+        try(final Options options = new Options().setCreateIfMissing(true)){
+            final List<byte[]> columnFamilyNames = RocksDB.listColumnFamilies(options,ROCKS_DB_PATH);
+            for(byte[] cfByte : columnFamilyNames){
+                log.warn("list column family -> {}" , new String(cfByte));
+            }
+
+        }catch (RocksDBException e) {
+            throw e;
+        }
+
         // 已经验证，需要open数据库所有的column family ，就是这么恶心的用法 !!!  2020/4/27
+        //遍历、删除所有Column Family
         final List<ColumnFamilyDescriptor> cfDescriptors = Arrays.asList(
                 new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
                 new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
@@ -58,34 +74,17 @@ public class RocksTest {
                      ROCKS_DB_PATH, cfDescriptors,
                      columnFamilyHandleList)) {
 
-            ColumnFamilyHandle columnFamilyHandle = null;
-            try {
-
-                /*for(ColumnFamilyHandle columnFamilyHandle : columnFamilyHandleList){
-                    if(!Arrays.equals(columnFamilyHandle.getDescriptor().getName(),RocksDB.DEFAULT_COLUMN_FAMILY)){
-                        db.dropColumnFamily(columnFamilyHandle);
-                    }
-
-
-                }*/
-
-                columnFamilyHandle = db.createColumnFamily(
-                        new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(),
-                                new ColumnFamilyOptions()));
+            for(ColumnFamilyHandle columnFamilyHandle : columnFamilyHandleList){
                 db.dropColumnFamily(columnFamilyHandle);
-            } finally {
 
-                if (columnFamilyHandle != null) {
-                    columnFamilyHandle.close();
-                }
-
-                for (ColumnFamilyHandle cfHandle : columnFamilyHandleList) {
-                    cfHandle.close();
-                }
             }
 
         }catch (RocksDBException e) {
-            e.printStackTrace();
+            throw  e;
+        }finally {
+            for (ColumnFamilyHandle cfHandle : columnFamilyHandleList) {
+                cfHandle.close();
+            }
         }
 
         //清除数据
@@ -104,6 +103,9 @@ public class RocksTest {
 
         log.warn("==================== Finish to reset rocksdb ==========");
     }
+
+    @After
+    public void destroy(){}
 
     @Test
     public void basicAPI() {
@@ -336,22 +338,103 @@ public class RocksTest {
     }
 
     @Test
-    public void testColumnFamily(){
+    public void testColumnFamily() throws Exception {
 
-        //遍历所有CF
-        try(final Options options = new Options().setCreateIfMissing(true)){
-            final List<byte[]> columnFamilyNames = RocksDB.listColumnFamilies(options,ROCKS_DB_PATH);
-            for(byte[] cfByte : columnFamilyNames){
-                log.warn("list column family -> {}" , new String(cfByte));
-            }
 
-        }catch (RocksDBException e) {
+        Statistics stats = new Statistics();
+        Filter bloomFilter = new BloomFilter(10);
 
-        }
+        Options options = new Options();
+
+        //TODO rocks中总共有 WAL、Meta、Sstable等多种文件类型，如何规划全局的磁盘使用量？？？
+
+        /* wal文件配置 */
+
+        options.setMaxLogFileSize(100 * SizeUnit.MB);//配置单个WAL文件大小， 如果文件大于`max_log_file_size`, 会新建一个log文件
+
+        // 1. 如果两者都设置为0，则将尽快删除日志，并且不会进入存档。
+        // 2. 如果WAL_ttl_seconds为0且WAL_size_limit_MB不为0，则每10分钟检查一次WAL文件，如果总大小大
+        //    于WAL_size_limit_MB，则从最早开始删除它们直到满足size_limit。 所有空文件都将被删除。
+        // 3. 如果WAL_ttl_seconds不为0且WAL_size_limit_MB为0，则每个WAL_ttl_seconds / 2将检查WAL
+        //    文件，并且将删除早于WAL_ttl_seconds的WAL文件。
+        // 4. 如果两者都不为0，则每隔10分钟检查一次WAL文件，并且在ttl为第一个的情况下执行两个检查。
+        options.setWalTtlSeconds(60 * 10);
+        options.setWalSizeLimitMB(1 * SizeUnit.GB);
+
+        options.setMaxTotalWalSize(1 * SizeUnit.GB);//一旦预写日志超过此大小，我们将开始强制刷新memtables由最早的实时WAL文件（即导致所有空间放大的文件）.如果设置为0，我们将会动态的选择WAL文件的大小通过
+
+        /* ManiFest文件配置 */
+        options.setMaxManifestFileSize(100 * SizeUnit.MB);//manifest文件在达到此限制时翻转。旧的清单文件将被删除。 默认值为1GB，
+        options.setManifestPreallocationSize(100 * SizeUnit.MB);//要预分配（通过fallocate）清单文件的字节数。 默认值为4mb
+
+        /* sstable配置 */
+        options.setCompactionStyle(CompactionStyle.FIFO);//设置sstable文件合并方式
+        options.setCompressionType(CompressionType.LZ4_COMPRESSION);//设置数据压缩算法
+
+        options.setLevel0FileNumCompactionTrigger(6);// L0 触发 Compaction 操作的文件个数阈值
+        options.setMaxBackgroundCompactions(10);//最大的后台并行 Compaction 作业数
+        options.setNumLevels(7);//总层级数
+
+        //设置sstable最大磁盘使用量
+        SstFileManager sstFileManager = new SstFileManager(Env.getDefault());
+        sstFileManager.setMaxAllowedSpaceUsage(100 * SizeUnit.MB);;
+        options.setSstFileManager(sstFileManager);
+
+        BlockBasedTableConfig basedTableConfig = new BlockBasedTableConfig();
+        basedTableConfig
+                .setBlockCacheSize(64 * SizeUnit.KB)
+                .setBlockSize(32 * SizeUnit.KB)
+                .setFilter(bloomFilter)
+                .setCacheNumShardBits(6)
+                .setBlockSizeDeviation(5)
+                .setBlockRestartInterval(10)
+                .setCacheIndexAndFilterBlocks(true)
+                .setHashIndexAllowCollision(false)
+                .setBlockCacheCompressedSize(64 * SizeUnit.KB)
+                .setBlockCacheCompressedNumShardBits(10)
+        ;
+        options.setTableFormatConfig(basedTableConfig);
+
+        /* memTable设置 */
+        options.setWriteBufferSize(64 * SizeUnit.MB);//单个memTable大小
+        options.setDbWriteBufferSize(0L);//所有列族的memtable的大小总和
+        options.setMaxWriteBufferNumber(5);//内存中可以拥有刷盘到SST文件前的最大memtable数
+        options.setMinWriteBufferNumberToMerge(2);
+        options.setMaxBackgroundFlushes(1);//后台最多同时进行的 Flush 任务数
+
+        options.setMaxCompactionBytes(64 * SizeUnit.MB);//所有压缩后的文件的最大大小。如果需要压缩的文件总大小大于这个值，我们在压缩的时候会避免展开更低级别的文件。
+
+        /*WriteBufferManager writeBufferManager = new WriteBufferManager();
+        options.setWriteBufferManager(WriteBufferManager);*/
+
+
+
+        /* 其它配置 */
+        options.setStatistics(stats);
+//        options.setRateLimiter(); //磁盘写入限速器
+        options.setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
+
+        /* writeOption 配置*/
+        WriteOptions writeOption = new WriteOptions();
+        writeOption.disableWAL();//关闭wal日志
+
+        // 如果为true，RocksDB支持刷新多个列族并以原子方式将其结果提交给MANIFEST。请注意，如果始终启用WAL，
+        // 则无需将atomic_flush设置为true，因为WAL允许数据库恢复到WAL中的最后一个持久状态。
+        // 当存在不受WAL保护的写入列族时，此选项很有用。
+        // 对于手动刷新，应用程序必须指定要列的族列并用DB :: Flush中以原子方式刷新。
+        // 对于自动触发的刷新，RocksDB以原子方式刷新所有列族。
+        // 目前可以启用WAL-enabled写入在进行原子flush之后可以replay
+        // 如果进程崩溃并尝试恢复，则独立进行。
+        options.setAtomicFlush(true);
+
+
+
 
         //列族配置
         ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-//        columnFamilyOptions.setCompressionType(CompressionType.BZLIB2_COMPRESSION);
+        columnFamilyOptions.setCompressionType(CompressionType.BZLIB2_COMPRESSION);//设置压缩算法
+        columnFamilyOptions.setTableFormatConfig(new BlockBasedTableConfig().setBlockSize(32 * SizeUnit.KB));
+
 
 
         final List<ColumnFamilyDescriptor> cfNames = Arrays.asList(
@@ -362,14 +445,9 @@ public class RocksTest {
 
         final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
 
-        try (final DBOptions dbOptions = new DBOptions()){
-            dbOptions.setCreateIfMissing(true).setCreateMissingColumnFamilies(true);
-            dbOptions.setMaxLogFileSize(1024 * 1024 * 10);
-            //do other ...... //
 
 
-
-
+        try (final DBOptions dbOptions = new DBOptions(options)){
             try(final RocksDB rocksDB = RocksDB.open(dbOptions,ROCKS_DB_PATH,cfNames,columnFamilyHandleList)){
 
                 //未指定cf时更新
@@ -383,11 +461,11 @@ public class RocksTest {
                 log.info("value from cf2 : {}" , new String(cf2Bytes));
 
 
-                rocksDB.put(columnFamilyHandleList.get(1), "test_key_1".getBytes(),"test_key_1".getBytes());
-                rocksDB.put(columnFamilyHandleList.get(2), "test_key_1".getBytes(),"test_key_2".getBytes());
+                rocksDB.put(columnFamilyHandleList.get(1),writeOption, "test_key_1".getBytes(),"test_key_1".getBytes());
+                rocksDB.put(columnFamilyHandleList.get(2),writeOption,"test_key_1".getBytes(),"test_key_2".getBytes());
 
 
-                //iterator
+                //遍历Column Family 全部数据
                 List<RocksIterator> cfIterators = rocksDB.newIterators(columnFamilyHandleList);
                 for(RocksIterator iter : cfIterators){
                     iter.seekToFirst();
@@ -463,7 +541,16 @@ public class RocksTest {
 
 
     @Test
-    public void testEntity(){
+    public void testEntity() throws Exception{
+
+        //初始化rocksdb数据目录
+        File f = new File(ROCKS_DB_PATH);
+        if(!f.exists()){
+            Files.createDirectories(Paths.get(ROCKS_DB_PATH));
+        }else {
+            f.delete();
+        }
+
         User user = new User("zsan",30);
         Serializer<User> serializer = new JavaSerializer<>();
         try(final Options options = new Options()){
@@ -480,14 +567,6 @@ public class RocksTest {
                     log.info(user1.toString());
                 }
 
-
-                user = new User("zsan",30);
-                keyBytes = serializer.serialize(user);
-                valBytes = db.get(keyBytes);
-                if(valBytes != null && valBytes.length > 0){
-                    User user2 = serializer.deSerialize(valBytes);
-                    log.info(user2.toString());
-                }
 
 
 

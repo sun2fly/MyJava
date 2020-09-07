@@ -1,6 +1,6 @@
-package com.mrfsong.storage.ehcache.serialize;
+package com.mrfsong.cache.rocks.serialize;
 
-import com.mrfsong.storage.ehcache.Serializer;
+import com.mrfsong.cache.rocks.Serializer;
 
 import java.io.*;
 

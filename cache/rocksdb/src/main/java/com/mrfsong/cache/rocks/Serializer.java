@@ -1,4 +1,4 @@
-package com.mrfsong.storage.ehcache;
+package com.mrfsong.cache.rocks;
 
 /**
  * <p>

@@ -1,4 +1,4 @@
-package com.mrfsong.storage.ehcache;// Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
+package com.mrfsong.cache.rocks;// Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
 //  This source code is licensed under both the GPLv2 (found in the
 //  COPYING file in the root directory) and Apache 2.0 License
 //  (found in the LICENSE.Apache file in the root directory).
@@ -8,25 +8,26 @@ import org.rocksdb.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Demonstrates using Transactions on an OptimisticTransactionDB with
+ * Demonstrates using Transactions on a TransactionDB with
  * varying isolation guarantees
  */
-public class OptimisticTransactionSample {
-  private static final String dbPath = "/tmp/rocksdb_optimistic_transaction_example";
+public class TransactionSample {
+  private static final String dbPath = "/tmp/rocksdb_transaction_example";
 
   public static final void main(final String args[]) throws RocksDBException {
 
     try(final Options options = new Options()
         .setCreateIfMissing(true);
-        final OptimisticTransactionDB txnDb =
-            OptimisticTransactionDB.open(options, dbPath)) {
+        final TransactionDBOptions txnDbOptions = new TransactionDBOptions();
+        final TransactionDB txnDb =
+            TransactionDB.open(options, txnDbOptions, dbPath)) {
 
       try (final WriteOptions writeOptions = new WriteOptions();
            final ReadOptions readOptions = new ReadOptions()) {
 
         ////////////////////////////////////////////////////////
         //
-        // Simple OptimisticTransaction Example ("Read Committed")
+        // Simple Transaction Example ("Read Committed")
         //
         ////////////////////////////////////////////////////////
         readCommitted(txnDb, writeOptions, readOptions);
@@ -55,7 +56,7 @@ public class OptimisticTransactionSample {
   /**
    * Demonstrates "Read Committed" isolation
    */
-  private static void readCommitted(final OptimisticTransactionDB txnDb,
+  private static void readCommitted(final TransactionDB txnDb,
       final WriteOptions writeOptions, final ReadOptions readOptions)
       throws RocksDBException {
     final byte key1[] = "abc".getBytes(UTF_8);
@@ -90,7 +91,7 @@ public class OptimisticTransactionSample {
   /**
    * Demonstrates "Repeatable Read" (Snapshot Isolation) isolation
    */
-  private static void repeatableRead(final OptimisticTransactionDB txnDb,
+  private static void repeatableRead(final TransactionDB txnDb,
       final WriteOptions writeOptions, final ReadOptions readOptions)
       throws RocksDBException {
 
@@ -98,8 +99,8 @@ public class OptimisticTransactionSample {
     final byte value1[] = "jkl".getBytes(UTF_8);
 
     // Set a snapshot at start of transaction by setting setSnapshot(true)
-    try(final OptimisticTransactionOptions txnOptions =
-            new OptimisticTransactionOptions().setSetSnapshot(true);
+    try(final TransactionOptions txnOptions = new TransactionOptions()
+          .setSetSnapshot(true);
         final Transaction txn =
             txnDb.beginTransaction(writeOptions, txnOptions)) {
 
@@ -108,18 +109,14 @@ public class OptimisticTransactionSample {
       // Write a key OUTSIDE of transaction
       txnDb.put(writeOptions, key1, value1);
 
-      // Read a key using the snapshot.
+      // Attempt to read a key using the snapshot.  This will fail since
+      // the previous write outside this txn conflicts with this read.
       readOptions.setSnapshot(snapshot);
-      final byte[] value = txn.getForUpdate(readOptions, key1, true);
-      assert(value == value1);
 
       try {
-        // Attempt to commit transaction
-        txn.commit();
+        final byte[] value = txn.getForUpdate(readOptions, key1, true);
         throw new IllegalStateException();
       } catch(final RocksDBException e) {
-        // Transaction could not commit since the write outside of the txn
-        // conflicted with the read!
         assert(e.getStatus().getCode() == Status.Code.Busy);
       }
 
@@ -138,7 +135,7 @@ public class OptimisticTransactionSample {
    * implement.
    */
   private static void readCommitted_monotonicAtomicViews(
-      final OptimisticTransactionDB txnDb, final WriteOptions writeOptions,
+      final TransactionDB txnDb, final WriteOptions writeOptions,
       final ReadOptions readOptions) throws RocksDBException {
 
     final byte keyX[] = "x".getBytes(UTF_8);
@@ -147,8 +144,8 @@ public class OptimisticTransactionSample {
     final byte keyY[] = "y".getBytes(UTF_8);
     final byte valueY[] = "y".getBytes(UTF_8);
 
-    try (final OptimisticTransactionOptions txnOptions =
-             new OptimisticTransactionOptions().setSetSnapshot(true);
+    try (final TransactionOptions txnOptions = new TransactionOptions()
+        .setSetSnapshot(true);
          final Transaction txn =
              txnDb.beginTransaction(writeOptions, txnOptions)) {
 
@@ -163,6 +160,7 @@ public class OptimisticTransactionSample {
 
       // Set a new snapshot in the transaction
       txn.setSnapshot();
+      txn.setSavePoint();
       snapshot = txnDb.getSnapshot();
       readOptions.setSnapshot(snapshot);
 
@@ -172,10 +170,11 @@ public class OptimisticTransactionSample {
       value = txn.getForUpdate(readOptions, keyY, true);
       txn.put(keyY, valueY);
 
-      // Commit.  Since the snapshot was advanced, the write done outside of the
-      // transaction does not prevent this transaction from Committing.
-      txn.commit();
+      // Decide we want to revert the last write from this transaction.
+      txn.rollbackToSavePoint();
 
+      // Commit.
+      txn.commit();
     } finally {
       // Clear snapshot from read options since it is no longer valid
       readOptions.setSnapshot(null);

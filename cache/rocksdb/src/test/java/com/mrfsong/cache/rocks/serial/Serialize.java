@@ -1,7 +1,7 @@
-package com.mrfsong.storage.ehcache.serial;
+package com.mrfsong.cache.rocks.serial;
 
 import com.google.common.reflect.TypeToken;
-import com.mrfsong.storage.ehcache.vo.User;
+import com.mrfsong.cache.rocks.vo.User;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.ParameterizedType;
