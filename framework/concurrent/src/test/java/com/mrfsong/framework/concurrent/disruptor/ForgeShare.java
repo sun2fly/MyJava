@@ -1,4 +1,4 @@
-package com.mrfsong.framework.disruptor;
+package com.mrfsong.framework.concurrent.disruptor;
 
 import lombok.extern.slf4j.Slf4j;
 

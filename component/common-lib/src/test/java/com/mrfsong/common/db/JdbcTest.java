@@ -15,6 +15,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -60,13 +61,16 @@ public class JdbcTest {
     public void query() {
 
         Connection conn = null;
+        Statement statement = null;
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","root","root");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?zeroDateTimeBehavior=convertToNull","root","root");
             //获取表索引（非主键）
-            PreparedStatement preparedStatement = conn.prepareStatement("select * from index_test");
+            PreparedStatement preparedStatement = conn.prepareStatement("select * from index_test where id = 5");
             resultSet = preparedStatement.executeQuery();
+            Stopwatch stopwatch = Stopwatch.createStarted();
+            //timestamp时间类型范围：
             while(resultSet.next()) {
                 Timestamp createTime = resultSet.getTimestamp("create_time");
                 Timestamp updateTime = resultSet.getTimestamp("update_time");
@@ -76,8 +80,26 @@ public class JdbcTest {
 
                 boolean status = resultSet.getBoolean("status");
                 byte sex = resultSet.getByte("sex");
-                log.info("ResultSet : {}" , resultSet.toString());
+                log.info("ResultSet : {} , cost : {}" , resultSet.toString() , stopwatch);
+                stopwatch.reset().start();
             }
+
+            stopwatch.reset().start();
+            statement = conn.createStatement();
+            resultSet = statement.executeQuery("select * from index_test where id = 5 and create_time is not null");
+            while(resultSet.next()){
+                log.info("ResultSet : {} , cost : {}" , resultSet.toString() , stopwatch);
+            }
+
+            stopwatch.reset().start();
+            statement = conn.createStatement();
+            resultSet = statement.executeQuery("select min(create_time) from index_test");
+            while(resultSet.next()){
+                Timestamp timestamp = resultSet.getTimestamp(1);
+                String string = resultSet.getString(1);
+                log.info("ResultSet : {} , cost : {}" , resultSet.toString() , stopwatch);
+            }
+            stopwatch.stop();
 
             LocalDateTime localDateTime = LocalDateTime.now();
             log.info("Now: {}",localDateTime.format(DATE_FORMATTER));
@@ -103,7 +125,7 @@ public class JdbcTest {
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","repl","mysql57");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb","repl","mysql57");
             //获取表索引（非主键）
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
@@ -131,7 +153,7 @@ public class JdbcTest {
     public void example() {
         try{
             Class.forName("com.mysql.jdbc.Driver");
-            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","root","root");
+            Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb","root","root");
 
             DatabaseMetaData meta =  conn.getMetaData();
             String dbVendorName = meta.getDatabaseProductName();
@@ -259,7 +281,7 @@ public class JdbcTest {
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb","root","root");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb","root","root");
             DatabaseMetaData meta =  conn.getMetaData();
             //获取表索引（非主键）
             resultSet = meta.getIndexInfo("dcomb", "dcomb", "index_test", false, false);
@@ -324,8 +346,8 @@ public class JdbcTest {
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-//            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&cachePrepStmts=true&useServerPrepStmts=true","root","root");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
+//            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&cachePrepStmts=true&useServerPrepStmts=true","root","root");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             preparedStatement = conn.prepareStatement("select max(id) from `source`");
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
@@ -368,28 +390,32 @@ public class JdbcTest {
 
     @Test
     public void testResultSet() {
-        Connection conn = null;
-        Statement statement = null;
+        Connection conn = null ;
+        PreparedStatement preparedStatement = null;
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
-            statement = conn.createStatement();
-            resultSet = statement.executeQuery("select min(id),max(id) from target2_bak limit 10");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&&zeroDateTimeBehavior=convertToNull","root","root");
+            preparedStatement = conn.prepareStatement("select * from source where id = ?");
+            preparedStatement.setInt(1,1);
+            resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
-                log.warn("========= enter one =========");
+                java.sql.Date createTime = resultSet.getDate("create_time");
 
-                if(resultSet.next()){
-                    log.warn("========= enter two =========");
-                }
+                //timestamp类型自带时区信息，时间范围 （1970 ~ 2038）
+                Timestamp createTimeTs = resultSet.getTimestamp("update_time");
+                Date date = (Date) resultSet.getTimestamp("create_time");
+
+                log.info(date.toString());
+
             }
         }catch (Exception e) {
             Assert.fail(Printer.getException(e));
         } finally {
-            if(statement != null) {
+            if(preparedStatement != null) {
                 try {
                     resultSet.close();
-                    statement.close();
+                    preparedStatement.close();
                     conn.close();
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -426,7 +452,7 @@ public class JdbcTest {
         try {
             Stopwatch stopwatch = Stopwatch.createStarted();
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true","root","root");
             statement = conn.createStatement();
 
             resultSet = statement.executeQuery("select min(create_time),max(create_time) from source where create_time >= '2020-01-01 00:00:00'");
@@ -440,7 +466,7 @@ public class JdbcTest {
             log.info("[step1] Min/Max日期查询耗时：{}" , stopwatch);
 
             //日期分片统计结果
-            Map<LocalDateTime, LocalDateTime> dayPartitionMap = splitDateToDay(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
+            Map<LocalDateTime, LocalDateTime> dayPartitionMap = splitDate(DateUtil.parseTs2DateTime(minDate), DateUtil.parseTs2DateTime(maxDate), ChronoUnit.DAYS);
             log.info("[step2] Min/Max日期分片耗时：{}" , stopwatch);
 
             List<Tuple3<Timestamp,Timestamp,Long>> splitDayStatResult = getPartitionStat(dayPartitionMap,conn);
@@ -468,6 +494,21 @@ public class JdbcTest {
                 }
             }
         }
+    }
+
+
+    @Test
+    public void testDateSplit() throws Exception {
+        DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String minDate = "0002-12-18 00:00:00";
+        String maxDate = "0002-12-18 23:00:00";
+
+        Map<LocalDateTime, LocalDateTime> resultMap = splitDate(LocalDateTime.parse(minDate, DATE_FORMATTER), LocalDateTime.parse(maxDate, DATE_FORMATTER), ChronoUnit.DAYS);
+        resultMap.entrySet().stream().forEach(entry -> {
+            log.info("start: {} , end:{}" , DATE_FORMATTER.format(entry.getKey()) , DATE_FORMATTER.format(entry.getValue()));
+
+        });
+
     }
 
     private void doCountTest(Connection conn , List<Tuple3<String,String,Long>> tuple3List) {
@@ -513,7 +554,7 @@ public class JdbcTest {
     public void testMethod() {
         LocalDateTime startTime = LocalDateTime.parse("2020-06-05 23:10:35", DATE_FORMATTER);
         LocalDateTime endTime = LocalDateTime.parse("2020-06-16 01:00:00", DATE_FORMATTER);
-        Map<LocalDateTime, LocalDateTime> dateTimeMap = splitDateToDay(startTime, endTime, ChronoUnit.DAYS);
+        Map<LocalDateTime, LocalDateTime> dateTimeMap = splitDate(startTime, endTime, ChronoUnit.DAYS);
         dateTimeMap.entrySet().forEach(entry -> {
             log.info("start : {} , end: {}" , entry.getKey().format(DATE_FORMATTER) ,entry.getValue().format(DATE_FORMATTER));
         });
@@ -540,36 +581,6 @@ public class JdbcTest {
         }
         return splitResult;
 
-    }
-
-    /**
-     * 日期分段切分
-     * @param minDateTime
-     * @param maxDateTime
-     * @param dateInteval
-     * @return
-     */
-    private Map<LocalDateTime,LocalDateTime> splitDateToDay(LocalDateTime minDateTime, LocalDateTime maxDateTime, ChronoUnit dateInteval) {
-        Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
-        long hours = ChronoUnit.HOURS.between(minDateTime, maxDateTime);
-        long differ = (long)Math.ceil(hours / 24.0d);
-        if(differ == 0){//日期间隔未超过一个chronoUnit
-            splitResult.put(minDateTime, maxDateTime.plusSeconds(1L));
-        }else {
-            LocalDateTime startTime = minDateTime;
-            LocalDateTime endTime;
-            for(int idx=1;idx<differ+1;idx++){
-                if(idx == differ) {
-                    splitResult.put(startTime,maxDateTime.plusSeconds(1L));
-                } else {
-                    endTime = minDateTime.plus(idx,dateInteval);
-                    splitResult.put(startTime,endTime);
-                    startTime = endTime;
-                }
-            }
-        }
-
-        return splitResult;
     }
 
     /**
@@ -760,4 +771,43 @@ public class JdbcTest {
 
     }
 
+
+    /***
+     *
+     * @param minDateTime
+     * @param maxDateTime
+     * @param dateInteval
+     * @return
+     */
+    private Map<LocalDateTime,LocalDateTime> splitDate(LocalDateTime minDateTime, LocalDateTime maxDateTime, ChronoUnit dateInteval) {
+
+        Map<LocalDateTime,LocalDateTime> splitResult = new LinkedHashMap<>();
+        //此处取开始|结束日期MIN|MAX值是为了避免后续完全按照小时差值计算时候，切分结果跨天问题
+       /* LocalDateTime dayMin = minDateTime.toLocalDate().atTime(LocalTime.MIN);
+        LocalDateTime dayMax = maxDateTime.toLocalDate().atTime(LocalTime.MAX);*/
+
+
+        //between方法向左看齐 （1.x => 1）
+        long differ = dateInteval.between(minDateTime, maxDateTime);
+
+
+        /*long hours = ChronoUnit.HOURS.between(dayMin,dayMax);
+        long differ = (long)Math.ceil(hours / 24.0d);*/
+        if(differ == 0){//日期间隔未超过一个chronoUnit
+            splitResult.put(minDateTime, maxDateTime.plusSeconds(1L));
+        }else {
+            LocalDateTime startTime = minDateTime;
+            for(int idx=1;idx<differ+1;idx++){
+                if(idx == differ) {//the max date
+                    splitResult.put(startTime,maxDateTime.plusSeconds(1L));
+                } else {
+                    LocalDateTime nextDate = startTime.plus(1,dateInteval);
+                    splitResult.put(startTime,nextDate);
+                    startTime = nextDate;
+                }
+            }
+        }
+
+        return splitResult;
+    }
 }

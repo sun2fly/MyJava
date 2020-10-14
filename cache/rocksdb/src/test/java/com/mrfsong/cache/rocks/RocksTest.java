@@ -1,9 +1,11 @@
 package com.mrfsong.cache.rocks;
 
+import com.google.common.collect.Lists;
 import com.mrfsong.cache.rocks.serialize.JavaSerializer;
 import com.mrfsong.cache.rocks.vo.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
@@ -44,7 +46,7 @@ public class RocksTest {
         return now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
     }
 
-//    @Before
+    @Before
     public void init() throws Exception {
         log.warn("==================== Begin to reset rocksdb ==========");
 
@@ -59,47 +61,11 @@ public class RocksTest {
             throw e;
         }
 
-        // 已经验证，需要open数据库所有的column family ，就是这么恶心的用法 !!!  2020/4/27
-        //遍历、删除所有Column Family
-        final List<ColumnFamilyDescriptor> cfDescriptors = Arrays.asList(
-                new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY),
-                new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes())
-        );
-        final List<ColumnFamilyHandle> columnFamilyHandleList = new ArrayList<>();
-
-        try (final DBOptions options = new DBOptions()
-                .setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true);
-             final RocksDB db = RocksDB.open(options,
-                     ROCKS_DB_PATH, cfDescriptors,
-                     columnFamilyHandleList)) {
-
-            for(ColumnFamilyHandle columnFamilyHandle : columnFamilyHandleList){
-                db.dropColumnFamily(columnFamilyHandle);
-
-            }
-
-        }catch (RocksDBException e) {
-            throw  e;
-        }finally {
-            for (ColumnFamilyHandle cfHandle : columnFamilyHandleList) {
-                cfHandle.close();
-            }
+        //删除数据库全部数据
+        try (final Options options = new Options()
+                .setCreateIfMissing(true)) {
+            RocksDB.destroyDB(ROCKS_DB_PATH,options);
         }
-
-        //清除数据
-        /*try (final Options options = new Options()) {
-            options.setCreateIfMissing(true);
-            options.setCreateMissingColumnFamilies(true);
-            try (final RocksDB db = RocksDB.open(options, ROCKS_DB_PATH)) {
-                ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions();
-                ColumnFamilyDescriptor testCfDescriptor = new ColumnFamilyDescriptor(ROCKS_DB_COLUMN_FAMILY.getBytes(),columnFamilyOptions);
-                ColumnFamilyHandle columnFamily = db.createColumnFamily(testCfDescriptor);
-                db.dropColumnFamily(columnFamily);
-            }
-        }catch (RocksDBException e) {
-            e.printStackTrace();
-        }*/
 
         log.warn("==================== Finish to reset rocksdb ==========");
     }
@@ -451,19 +417,32 @@ public class RocksTest {
             try(final RocksDB rocksDB = RocksDB.open(dbOptions,ROCKS_DB_PATH,cfNames,columnFamilyHandleList)){
 
                 //未指定cf时更新
-                /*rocksDB.put("dfkey1".getBytes(), "dfvalue".getBytes());//不指定则使用默认CF
-                rocksDB.put(columnFamilyHandleList.get(0), "dfkey2".getBytes(),"dfvalue".getBytes());
-                rocksDB.put(columnFamilyHandleList.get(1), "newcfkey1".getBytes(),"newcfvalue".getBytes());*/
+                rocksDB.put("test_key".getBytes(), "d_value".getBytes());//不指定则使用默认CF
+                rocksDB.put(columnFamilyHandleList.get(1), "test_key".getBytes(),"value_1".getBytes());
+                rocksDB.put(columnFamilyHandleList.get(2), "test_key".getBytes(),"value_2".getBytes());
 
-                byte[] cf1Bytes = rocksDB.get(columnFamilyHandleList.get(1), "test_key_1".getBytes());
-                byte[] cf2Bytes = rocksDB.get(columnFamilyHandleList.get(2), "test_key_1".getBytes());
-                log.info("value from cf1 : {}" , new String(cf1Bytes));
-                log.info("value from cf2 : {}" , new String(cf2Bytes));
+                byte[] cf0Bytes = rocksDB.get("test_key".getBytes());
+                byte[] cf1Bytes = rocksDB.get(columnFamilyHandleList.get(1), "test_key".getBytes());
+                byte[] cf2Bytes = rocksDB.get(columnFamilyHandleList.get(2), "test_key".getBytes());
 
+                log.info("value from cf0 : {}" , (cf0Bytes == null) ? "" : new String(cf0Bytes));
+                log.info("value from cf1 : {}" , (cf1Bytes == null) ? "" : new String(cf1Bytes));
+                log.info("value from cf2 : {}" , (cf2Bytes == null) ? "" : new String(cf2Bytes));
 
-                rocksDB.put(columnFamilyHandleList.get(1),writeOption, "test_key_1".getBytes(),"test_key_1".getBytes());
-                rocksDB.put(columnFamilyHandleList.get(2),writeOption,"test_key_1".getBytes(),"test_key_2".getBytes());
+                //batch write
+                try(WriteBatch writeBatch = new WriteBatch()){
+                    writeBatch.put(columnFamilyHandleList.get(1), "test_key_1".getBytes(),"test_key_1".getBytes());
+                    writeBatch.put(columnFamilyHandleList.get(2),"test_key_1".getBytes(),"test_key_2".getBytes());
+                    rocksDB.write(writeOption,writeBatch);
+                }
 
+                //multi get
+                List<byte[]> multiGetAsList = rocksDB.multiGetAsList(columnFamilyHandleList.subList(1,3), Lists.newArrayList("test_key_1".getBytes(), "test_key_1".getBytes()));
+                multiGetAsList.forEach(bytes -> {
+                    if(bytes != null){
+                        log.info("multiGet ==========> {}" , new String(bytes));
+                    }
+                });
 
                 //遍历Column Family 全部数据
                 List<RocksIterator> cfIterators = rocksDB.newIterators(columnFamilyHandleList);
@@ -481,8 +460,23 @@ public class RocksTest {
                     columnFamilyHandle.close();
                 }
             }
-        }catch (Exception e) {
-            e.printStackTrace();
+        }
+
+
+        try(final Options opt = new Options()) {
+            opt.setCreateIfMissing(true);
+            opt.setCreateMissingColumnFamilies(true);
+            List<ColumnFamilyHandle> columnFamilyHandles = Lists.newArrayList();
+            try(final RocksDB rocksDB = RocksDB.open(new DBOptions(opt),ROCKS_DB_PATH,cfNames,columnFamilyHandles)) {
+                byte[] cf1Bytes = rocksDB.get(columnFamilyHandles.get(1), "test_key".getBytes());
+                log.info(new String(cf1Bytes));
+
+            }finally {
+                for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
+                    columnFamilyHandle.close();
+                }
+            }
+
         }
 
 

@@ -1,11 +1,23 @@
 package com.mrfsong.struct;
 
+import com.github.jsonzou.jmockdata.JMockData;
+import com.github.jsonzou.jmockdata.MockConfig;
+import com.github.jsonzou.jmockdata.TypeReference;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Range;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
+
+import static com.github.jsonzou.jmockdata.JMockData.mock;
 
 /**
  * <p>
@@ -16,7 +28,13 @@ import java.util.Map;
  * @Date 2019/11/21
  */
 @Slf4j
+@RunWith(Parameterized.class)
 public class LeetCodeTest {
+
+    @Parameterized.Parameters
+    public static Object[][] data() {
+        return new Object[1000][0]; // repeat count which you want
+    }
 
 
     @Test
@@ -583,8 +601,148 @@ public class LeetCodeTest {
         return count;
     }
 
+    @Test
+    public void testMerge() {
+        int threshold = 100;
+        MockConfig mockConfig = MockConfig.newInstance();
+        mockConfig.intRange(0,200);
+        List<Integer> mockIntList = mock(new TypeReference<List<Integer>>(){},mockConfig);
+
+        log.info("MockData : {}, element size : {}" , Arrays.toString(mockIntList.toArray()) , mockIntList.size());
+
+        List<Integer> indexList = Lists.newArrayListWithCapacity(mockIntList.size());
+        int summer=0, index=0, startPos = 0;
+        for(int num : mockIntList){
+            if(num > threshold){
+
+                indexList.add(index);
+                log.warn("Big element index : [{}] , num : {}" , index , num );
+
+                if(summer > 0){
+                    log.info("Break Merge element range : [{} - {}] , sum : {}" , startPos , (index-1) ,summer);
+                    IntStream.range(startPos,index).forEach(i -> indexList.add(i));
+                }
+
+                startPos = (index + 1);//跳过当前元素、重新开始累加计算
+                summer = 0;           //累加器清零
+            }else {
+                summer += num;
+                if(summer > threshold){
+                    log.info("Sum Merge element range : [{} - {}] , sum : {}" , startPos , (index-1) ,(summer-num));
+                    IntStream.range(startPos,index).forEach(i -> indexList.add(i));
+                    startPos = (index - 1);
+                    summer -= num;
+                }
+            }
+            index++;
+        }
+
+        if(summer > 0){
+            log.warn("Left element range : [{} - {}] , sum : {}" , startPos , mockIntList.size() - 1 ,summer);
+            IntStream.range(startPos,mockIntList.size()).forEach(i -> indexList.add(i));
+        }
+
+        log.info("Partition Index : {}" , Arrays.toString(indexList.toArray()));
+        Assert.assertTrue(indexList.size() == mockIntList.size());
 
 
+    }
+
+    @Test
+    public void testMerge2() {
+
+        MockConfig mockConfig = MockConfig.newInstance();
+        mockConfig.intRange(0,200);
+        mockConfig.sizeRange(1,10);
+        int[] sourceIdList = JMockData.mock(new TypeReference<int[]>(){},mockConfig);
+        log.info("MockData : {}, element size : {}" , Arrays.toString(sourceIdList) , sourceIdList.length);
+
+        int threadHold = 100;
+        int summer = 0;//累加值
+        int startPos = 0;//累加起始坐标
+
+
+        List<Integer> indexList = Lists.newArrayListWithCapacity(sourceIdList.length);
+
+        for (int i = 0; i < sourceIdList.length; i++) {
+
+            summer += sourceIdList[i];
+            if (summer > threadHold) {
+                if (startPos == i) {
+                    System.out.println(startPos + " ----- " + startPos);//就一个元素
+                } else {
+                    i--;
+                    System.out.println(startPos + " ----- " + i);//回退
+                }
+                startPos = i + 1;
+                summer = 0;
+
+            }
+            if (summer == threadHold) {
+                System.out.println(startPos + " ----- " + i);
+                startPos = i + 1;
+                summer = 0;
+            }
+        }
+        if (startPos < (sourceIdList.length)) {
+            System.out.println(startPos + " ---- " + (sourceIdList.length - 1));
+        }
+    }
+    @Test
+    public void testMerge3() {
+
+
+        MockConfig mockConfig = MockConfig.newInstance();
+        mockConfig.intRange(0,200);
+        mockConfig.sizeRange(1,10);
+        List<Integer> countList = mock(new TypeReference<List<Integer>>(){},mockConfig);
+
+        log.info("MockData : {}, element size : {}" , Arrays.toString(countList.toArray()) , countList.size());
+
+        int threshold = 100;
+        int summer = 0;//累加值
+        int startPos = 0;//累加起始坐标
+
+        List<Range<Integer>> splitRangeList = Lists.newArrayList();
+
+        for (int i = 0; i < countList.size(); i++) {
+            summer += countList.get(i);
+            if (summer > threshold) {
+                if (startPos == i) {
+                    System.out.println(startPos + " ----- " + startPos);//就一个元素
+                    splitRangeList.add(Range.closed(startPos, startPos));
+                } else {
+                    i--;
+                    System.out.println(startPos + " ----- " + i);//回退
+                    splitRangeList.add(Range.closed(startPos, i));
+                }
+                startPos = i + 1;
+                summer = 0;
+
+            }
+
+            if (summer == threshold) {
+                System.out.println(startPos + " ----- " + i);
+                splitRangeList.add(Range.closed(startPos, i));
+                startPos = i + 1;
+                summer = 0;
+            }
+        }
+
+        if (startPos < (countList.size())) {
+            splitRangeList.add(Range.closed(startPos, (countList.size() - 1)));
+            System.out.println(startPos + " ---- " + (countList.size() - 1));
+        }
+
+        splitRangeList.stream().forEach(rng -> {
+            log.warn("split range : [{} - {}]" , rng.lowerEndpoint() , rng.upperEndpoint());
+        });
+
+
+
+
+
+    }
 
 
 

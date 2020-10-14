@@ -1,10 +1,10 @@
-package com.mrfsong.framework.disruptor;
+package com.mrfsong.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.*;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.EventHandlerGroup;
 import com.lmax.disruptor.dsl.ProducerType;
-import com.mrfsong.framework.MessageEvent;
+import com.mrfsong.framework.concurrent.MessageEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 

@@ -1,4 +1,4 @@
-package com.mrfsong.framework;
+package com.mrfsong.framework.concurrent;
 
 import lombok.Data;
 

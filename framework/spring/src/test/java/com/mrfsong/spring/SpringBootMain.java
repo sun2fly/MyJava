@@ -3,6 +3,7 @@ package com.mrfsong.spring;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
  * <p>
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @Slf4j
+@ComponentScan(value = "com.mrfsong.spring.boot")
 public class SpringBootMain {
 
     public static void main(String[] args) {

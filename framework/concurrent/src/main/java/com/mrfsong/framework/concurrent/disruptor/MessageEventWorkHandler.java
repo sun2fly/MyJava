@@ -1,7 +1,7 @@
-package com.mrfsong.framework.disruptor;
+package com.mrfsong.framework.concurrent.disruptor;
 
 import com.lmax.disruptor.WorkHandler;
-import com.mrfsong.framework.MessageEvent;
+import com.mrfsong.framework.concurrent.MessageEvent;
 import lombok.extern.slf4j.Slf4j;
 
 /**
