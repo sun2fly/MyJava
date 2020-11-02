@@ -3,6 +3,9 @@ package com.mrfsong.struct;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * <p>
  * 测试
@@ -29,6 +32,8 @@ public class ObjectTest {
         int shiftL = (capacity << 1);
         log.info("shifL：{}" ,shiftL);
         log.info("shiftR：{}" ,shiftR);
+        List<String> list = new ArrayList<>();
+        list.set(10,"111");
 
     }
 }

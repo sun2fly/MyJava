@@ -745,6 +745,30 @@ public class LeetCodeTest {
     }
 
 
+    @Test
+    public void testLinkedList() {
+        ListNode head = new ListNode(-1);
+        ListNode child = new ListNode(0);
+        ListNode grandson = new ListNode(1);
+        head.setNext(child);
+        head.next.setNext(grandson);
+
+
+
+        ListNode ref = head;
+        ref.next = new ListNode(100);
+
+
+        log.info(String.valueOf(ref));
+        log.info(String.valueOf(head));
+
+    }
+    
+    
+
+    
+
+
 
 
     class ListNode {
@@ -766,6 +790,12 @@ public class LeetCodeTest {
 
         public void setNext(ListNode next) {
             this.next = next;
+        }
+
+        @Override
+        public String toString() {
+            return "ListNode{" +
+                    "val=" + val + "}";
         }
     }
 

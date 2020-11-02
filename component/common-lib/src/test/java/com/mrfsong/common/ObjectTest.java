@@ -185,7 +185,7 @@ public class ObjectTest {
     }
 
     @Test
-    public void testStringReplace(){
+    public void testString(){
 
         String str = "a::1,b::2,c::3,d::4";
 
@@ -193,12 +193,20 @@ public class ObjectTest {
         String replaceChar = str.replace(':', '=');
 
         //replace(charSequence,charSequence)方法底层使用的字符串匹配
-        String replaceCharSequence = str.replace("::", "=");
+        String replaceString = str.replace("::", "=");
 
         //replaceAll方法底层使用的正则表达式
-        String replaceAll = str.replaceAll("::", "=");
-        log.info("replace === > {}" , replaceChar);
-        log.info("replaceAll === > {}" , replaceAll);
+        String replaceAllString = str.replaceAll("::", "=");
+        log.info("replace === > {}" , replaceString);
+        log.info("replaceAll === > {}" , replaceAllString);
+
+        log.warn("==================== Test Replace ====================");
+
+        log.info("[0-0]: {}" ,str.substring(0, 0));
+        log.info("[0-0]: {}" ,str.substring(1, 1));
+        log.info("[0-0]: {}" ,str.substring(1, str.length()));
+        log.warn("==================== Test Substring ====================");
+
 
     }
 
@@ -350,6 +358,22 @@ public class ObjectTest {
 
         Assert.assertNull(map.get("hello".getBytes()));
 
+    }
+
+
+    @Test
+    public void testEquals() {
+        //[-128 , 127] int cache
+        List<Integer> intList = Lists.newArrayListWithCapacity(2);
+        intList.add(-127);
+        intList.add(-127);
+        Assert.assertTrue(intList.get(0) == intList.get(1));
+
+
+        intList.clear();
+        intList.add(128);
+        intList.add(128);
+        Assert.assertFalse(intList.get(0) == intList.get(1));
     }
 
     @Test
