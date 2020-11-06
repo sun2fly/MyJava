@@ -5,6 +5,7 @@ import com.github.jsonzou.jmockdata.MockConfig;
 import com.github.jsonzou.jmockdata.TypeReference;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
+import com.mrfsong.struct.pojo.LinkedNode;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
@@ -414,7 +415,7 @@ public class LeetCodeTest {
      * @param lists
      * @return
      */
-    public ListNode mergeKLists(ListNode[] lists) {
+    public LinkedNode mergeKLists(LinkedNode[] lists) {
 
         if(lists == null || lists.length == 0) {
             return null;
@@ -426,13 +427,13 @@ public class LeetCodeTest {
 
 
         // 最终合并完成链表
-        ListNode finalNode = null;
+        LinkedNode finalNode = null;
         for(int i=0;i<lists.length-1;i++) {
 
             //依次比较、合并相邻链表
-            ListNode nextNode = null;
-            ListNode firstCmpNode = lists[i];
-            ListNode secondCmpNode = lists[++i];
+            LinkedNode nextNode = null;
+            LinkedNode firstCmpNode = lists[i];
+            LinkedNode secondCmpNode = lists[++i];
 
 
             // 循环结束条件：链表到尾元素
@@ -747,16 +748,16 @@ public class LeetCodeTest {
 
     @Test
     public void testLinkedList() {
-        ListNode head = new ListNode(-1);
-        ListNode child = new ListNode(0);
-        ListNode grandson = new ListNode(1);
+        LinkedNode head = new LinkedNode(-1);
+        LinkedNode child = new LinkedNode(0);
+        LinkedNode grandson = new LinkedNode(1);
         head.setNext(child);
         head.next.setNext(grandson);
 
 
 
-        ListNode ref = head;
-        ref.next = new ListNode(100);
+        LinkedNode ref = head;
+        ref.next = new LinkedNode(100);
 
 
         log.info(String.valueOf(ref));
@@ -771,33 +772,6 @@ public class LeetCodeTest {
 
 
 
-    class ListNode {
-        int val;
-        ListNode next;
-        ListNode(int x) { val = x; }
-
-        public int getVal() {
-            return val;
-        }
-
-        public void setVal(int val) {
-            this.val = val;
-        }
-
-        public ListNode getNext() {
-            return next;
-        }
-
-        public void setNext(ListNode next) {
-            this.next = next;
-        }
-
-        @Override
-        public String toString() {
-            return "ListNode{" +
-                    "val=" + val + "}";
-        }
-    }
 
 
 }

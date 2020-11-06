@@ -33,7 +33,9 @@ public class ObjectTest {
         log.info("shifL：{}" ,shiftL);
         log.info("shiftR：{}" ,shiftR);
         List<String> list = new ArrayList<>();
-        list.set(10,"111");
+        list.add("111");
+        list.set(0,"222");
+        log.info(list.get(0));
 
     }
 }
