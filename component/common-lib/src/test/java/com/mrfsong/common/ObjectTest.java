@@ -17,6 +17,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * <p>
@@ -208,6 +210,7 @@ public class ObjectTest {
         log.warn("==================== Test Substring ====================");
 
 
+
     }
 
     @Test
@@ -226,15 +229,31 @@ public class ObjectTest {
         log.info("Result val : " + execRtValue);
     }
 
+    @Test
+    public void testTest() {
+
+        int[] nums = new int[]{1,3,2,9,5,0,4};
+        IntStream stream = Arrays.stream(nums);
+        List<Integer> list = stream.boxed().collect(Collectors.toList());
+        List<Integer> subList = new ArrayList<>(list.subList(0,3));
+
+
+        subList.stream().forEach(e -> log.info("element : {}" , e));
+
+
+
+
+    }
+
     /**
      * [)区间 不包括后者
      */
     @Test
     public void testSubList() {
-        List<Integer> indexList = Lists.newArrayList(1);
+        List<Integer> indexList = Lists.newArrayList(1,3,5);
         List<String> list = Lists.newArrayList("1","2","3","4","5","6","7");
-        /*List<String> subList = list.subList(2, 2);
-        subList.forEach(o -> log.info(o));*/
+
+
 
         int position = 0;
         Map<Integer,Integer> map = new LinkedHashMap<>();
@@ -341,6 +360,7 @@ public class ObjectTest {
 
     }
 
+
     @Test
     public void testByteKey() throws Exception {
         byte[] keyBytes1 = "hello".getBytes();
@@ -415,6 +435,10 @@ public class ObjectTest {
             //return后仍然会执行
             log.info("========= 倔强的finally =========");
         }
+    }
+
+    private String print(Object obj) {
+        return obj.toString();
     }
 
 

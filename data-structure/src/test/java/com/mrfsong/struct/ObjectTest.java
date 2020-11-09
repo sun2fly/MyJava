@@ -22,6 +22,8 @@ public class ObjectTest {
         int minBit = Integer.MIN_VALUE % 10;
         int maxBit = Integer.MAX_VALUE % 10;
         log.info("Max bit :{} , Min bit : {}" , maxBit ,minBit);
+
+
     }
 
     @Test

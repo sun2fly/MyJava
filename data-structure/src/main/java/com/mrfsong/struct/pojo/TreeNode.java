@@ -6,9 +6,9 @@ package com.mrfsong.struct.pojo;
 public class TreeNode {
 
 
-    private int val;
-    private TreeNode left ;
-    private TreeNode right ;
+    public int val;
+    public TreeNode left ;
+    public TreeNode right ;
 
     public TreeNode(int val) {
         this.val = val;
@@ -38,10 +38,9 @@ public class TreeNode {
         this.right = right;
     }
 
+
     @Override
     public String toString() {
-        return "TreeNode{" +
-                "val=" + val +
-                '}';
+        return " " + val;
     }
 }
