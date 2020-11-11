@@ -12,6 +12,7 @@
     <modules>
         <module>concurrent</module>
         <module>spring</module>
+        <module>mysql-sharding</module>
     </modules>
 
 
