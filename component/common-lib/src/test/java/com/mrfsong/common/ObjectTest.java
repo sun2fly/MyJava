@@ -281,6 +281,40 @@ public class ObjectTest {
         }*/
     }
 
+
+    @Test
+    public void testDeque() {
+        Deque<Integer> deque = new ArrayDeque<>();
+        deque.offerLast(5);
+        deque.offerLast(3);
+        deque.offerLast(6);
+        deque.offerFirst(1);
+
+        log.info("first ===> {} " , deque.peekFirst() );
+        log.info("last ===> {} " , deque.peekLast() );
+        log.info("deque size : {}" , deque.size());
+
+        Iterator<Integer> iterator = deque.descendingIterator();
+        StringBuilder stringBuilder = new StringBuilder("");
+        while(iterator.hasNext()){
+            stringBuilder.append(" " + iterator.next());
+        }
+        log.info("descendingIterator : {}" , stringBuilder.toString());
+
+        stringBuilder = new StringBuilder("");
+        iterator = deque.iterator();
+        while(iterator.hasNext()){
+            stringBuilder.append(" " + iterator.next());
+        }
+        log.info("iterator : {}" , stringBuilder.toString());
+
+
+
+//        deque.descendingIterator();
+
+
+    }
+
     @Test
     public void testNum(){
         Assert.assertFalse(100L > 100 * 1.00001d);
@@ -327,7 +361,7 @@ public class ObjectTest {
     }
 
     @Test
-    public void testObjRef() {
+    public void testObjRef() throws Exception {
 
         List<String> list = Lists.newArrayList("a","b","c");
         User user = new User();
@@ -427,13 +461,20 @@ public class ObjectTest {
 
 
 
-    private String rtn() {
-
+    private String rtn() throws Exception {
+        Throwable ex = null;
         try{
             return "I'm ok.";
+        } catch (Exception e) {
+            ex = e;
         }finally {
             //return后仍然会执行
             log.info("========= 倔强的finally =========");
+
+            //addSuppressed()方法
+            // 在java7中为Throwable类增加addSuppressed方法。当一个异常被抛出的时候，可能有其他异常因为该异常而被抑制住，从而无法正常抛出。这时可以通过addSuppressed方法把这些被抑制的方法记录下来。被抑制的异常会出现在抛出的异常的堆栈信息中，也可以通过getSuppressed方法来获取这些异常。
+            ex.addSuppressed(new RuntimeException("finally exception!"));
+            throw new RuntimeException(ex);
         }
     }
 
