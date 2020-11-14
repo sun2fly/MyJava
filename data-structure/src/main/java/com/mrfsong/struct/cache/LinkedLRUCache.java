@@ -3,12 +3,13 @@ package com.mrfsong.struct.cache;
 import java.util.HashMap;
 
 /**
- * Lru Cache by HashMap
+ *
+ * 基于双向链表的LRU实现
  *
  * @author songfei@xbniao.com
  * @create 2017/12/05 16:12
  **/
-public class LRUCache2 {
+public class LinkedLRUCache {
 
     private class Node{
         Node prev;
@@ -29,7 +30,7 @@ public class LRUCache2 {
     private Node head = new Node(-1, -1);
     private Node tail = new Node(-1, -1);
 
-    public LRUCache2(int capacity) {
+    public LinkedLRUCache(int capacity) {
         this.capacity = capacity;
         tail.prev = head;
         head.next = tail;
