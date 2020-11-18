@@ -13,6 +13,7 @@
         <module>concurrent</module>
         <module>spring</module>
         <module>mysql-sharding</module>
+        <module>dubbo</module>
     </modules>
 
 

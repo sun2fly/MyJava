@@ -3,14 +3,19 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>search</artifactId>
+        <artifactId>framework</artifactId>
         <groupId>com.mrfsong</groupId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>elasticsearch</artifactId>
+    <name>dubbo</name>
+    <artifactId>dubbo</artifactId>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <profiles>
         <profile>
@@ -42,6 +47,13 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-jdbc-core</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+
+
         <!-- log commpent -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -61,28 +73,14 @@
         </dependency>
 
         <dependency>
-            <groupId>org.elasticsearch.client</groupId>
-            <artifactId>transport</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.mrfsong</groupId>
-            <artifactId>common-lib</artifactId>
-        </dependency>
-
-
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-
-
     </dependencies>
 
     <build>
+        <finalName>mysql-sharding</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -103,7 +101,12 @@
                     <exclude>local/*</exclude>
                 </excludes>
             </testResource>
+            <testResource>
+                <directory>src/test/resources/${env}</directory>
+            </testResource>
         </testResources>
+
+
     </build>
 
 
