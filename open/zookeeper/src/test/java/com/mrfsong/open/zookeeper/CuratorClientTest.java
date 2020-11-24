@@ -7,6 +7,7 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorListener;
+import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.leader.LeaderSelector;
@@ -15,6 +16,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.data.Stat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +47,7 @@ public class CuratorClientTest {
 
     @After
     public void destory() {
-        if (client != null && client.isStarted()) {
+        if (client != null && client.getState() == CuratorFrameworkState.STARTED) {
             client.close();
         }
     }
@@ -56,8 +58,11 @@ public class CuratorClientTest {
         //创建节点
         client.start();
 
+        watchedData(PATH, event -> log.warn("WatchedEvent: [{}]",event.toString()));
+
         //创建普通节点 （默认：CreateMode#PERSISTENT）
         create(PATH, "test".getBytes());
+
 
         createEphemeral(PATH_EPHEMERAL, "EPHEMERAL".getBytes());
         createEphemeralSequential(PATH_SEQUENTIAL, "EPHEMERAL SEQUENTIAL".getBytes());
@@ -85,7 +90,7 @@ public class CuratorClientTest {
             for (int i = 0; i < 10; i++) {
 
                 CuratorFramework client = getClient(ZK_SERVER_URL, retryPolicy);
-                client.start();
+
                 clients.add(client);
 
 
@@ -94,16 +99,17 @@ public class CuratorClientTest {
                 LeaderSelector leaderSelector = new LeaderSelector(client, PATH, new LeaderSelectorListenerAdapter() {
                     @Override
                     public void takeLeadership(CuratorFramework client) throws Exception {
+                        //方法完成后、会释放leader角色
                         log.warn(name + ":I am leader.");
-                        Thread.sleep(2000);
+                        TimeUnit.SECONDS.sleep(10);
                     }
 
                 });
-
-
                 leaderSelector.autoRequeue();
-                leaderSelector.start();
                 selectors.add(leaderSelector);
+
+                client.start();
+                leaderSelector.start();
             }
 
             Thread.sleep(Integer.MAX_VALUE);
@@ -195,7 +201,12 @@ public class CuratorClientTest {
 
     private void create(String path, byte[] payload) throws Exception {
         // this will create the given ZNode with the given data
-        client.create().creatingParentsIfNeeded().forPath(path, payload);
+        Stat stat = client.checkExists().forPath(path);
+        if(stat == null){
+            client.create().creatingParentsIfNeeded().forPath(path, payload);
+        }else {
+            log.warn("Node:[{}] has exist !" , path);
+        }
     }
 
     private void createEphemeral(String path, byte[] payload) throws Exception {
@@ -275,7 +286,8 @@ public class CuratorClientTest {
         client.delete().guaranteed().forPath(path);
     }
 
-    private List<String> watchedGetChildren(String path) throws Exception {
+    private List<String> watchedChildren(String path) throws Exception {
+
         /**
          * Get children and set a watcher on the node. The watcher notification will come through the
          * CuratorListener (see setDataAsync() above).
@@ -283,11 +295,22 @@ public class CuratorClientTest {
         return client.getChildren().watched().forPath(path);
     }
 
-    private List<String> watchedGetChildren(String path, Watcher watcher) throws Exception {
+    private List<String> watchedChildren(String path, Watcher watcher) throws Exception {
         /**
          * Get children and set the given watcher on the node.
          */
         return client.getChildren().usingWatcher(watcher).forPath(path);
+    }
+
+
+    private byte[] watchedData(String path , Watcher watcher) throws Exception {
+
+        return client.getData().usingWatcher(watcher).forPath(path);
+    }
+
+
+    private void getEphemerals(String path) throws Exception {
+        client.getZookeeperClient().getZooKeeper().getEphemerals();
     }
 
 
