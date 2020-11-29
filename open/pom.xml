@@ -12,6 +12,7 @@
   <modules>
     <module>elasticsearch</module>
     <module>zookeeper</module>
+    <module>canal</module>
   </modules>
   <packaging>pom</packaging>
 
