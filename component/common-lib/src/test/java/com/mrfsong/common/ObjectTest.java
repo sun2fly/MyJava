@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -455,6 +457,30 @@ public class ObjectTest {
         log.info("==========i:{}==========" , i);
 
         //0-1 1-2 2-4 4-8 8-16 16-32 32-64 64-128 128-256 256-512 512-1024 1024-2048
+
+    }
+
+    @Test
+    public void testPath () throws Exception {
+        java.nio.file.Path lastestJobPath = Paths.get("/tmp/flinkx/checkpoint");
+        Optional<java.nio.file.Path> chkPath = Files.list(lastestJobPath)
+                .filter(p -> Files.isDirectory(p) && p.toFile().getName().startsWith("chk-"))
+                .sorted((p1, p2)-> Long.valueOf(p2.toFile().lastModified())
+                        .compareTo(p1.toFile().lastModified()))
+                .findFirst();
+        String chkAbsPath = "";
+        if(chkPath.isPresent()){
+            chkAbsPath = chkPath.get().toAbsolutePath().toString();
+        }
+        log.info("Path : " + chkAbsPath);
+
+        //长度不足，高位补零
+        String prefFormat = String.format("/%019d", System.currentTimeMillis());
+        String subfixFormat = String.format("/%d019", System.currentTimeMillis());
+        log.info("format : {}" , prefFormat);
+        log.info("format : {}" , subfixFormat);
+        Long strToLong = Long.valueOf("0000001607414419733");
+        log.info("strToLong : {}" , strToLong);
 
     }
 

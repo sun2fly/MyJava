@@ -34,7 +34,7 @@ public class JdbcTest {
 
     private static Integer BULK_SIZE = 2000;
     private static Integer QUERY_BATCH_SIZE = 1000000;
-    private static Integer MOCK_TOTAL = 3123436;//mock数据总量
+    private static Integer MOCK_TOTAL = 100;//mock数据总量
     private static DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     MockConfig mockConfig;
@@ -50,7 +50,7 @@ public class JdbcTest {
                 .dateRange("2020-06-01 00:00:00","2020-07-01 00:00:00")
                 .intRange(20,100)
 //                .setEnabledCircle(false)
-//                .stringRegex("mock-")
+                .stringRegex("mock-")
                 .globalConfig();
     }
 
@@ -72,14 +72,19 @@ public class JdbcTest {
             Stopwatch stopwatch = Stopwatch.createStarted();
             //timestamp时间类型范围：
             while(resultSet.next()) {
-                Timestamp createTime = resultSet.getTimestamp("create_time");
-                Timestamp updateTime = resultSet.getTimestamp("update_time");
+                Timestamp create_time_ts = resultSet.getTimestamp("create_time");
+                Timestamp update_time_ts = resultSet.getTimestamp("update_time");
 
-                String create_time_ymd = resultSet.getString("create_time");
-                String update_time_ymd = resultSet.getString("update_time");
+                String create_time_str = resultSet.getString("create_time");
+                String update_time_str = resultSet.getString("update_time");
+
+                Date create_time_dt = resultSet.getDate("create_time");
+                Date update_time_dt = resultSet.getDate("update_time");
 
                 boolean status = resultSet.getBoolean("status");
                 byte sex = resultSet.getByte("sex");
+
+
                 log.info("ResultSet : {} , cost : {}" , resultSet.toString() , stopwatch);
                 stopwatch.reset().start();
             }
@@ -119,17 +124,17 @@ public class JdbcTest {
     }
 
     @Test
-    public void information_schema() {
+    public void queryInformationSchema() {
         String sql = "select table_rows from information_schema.tables where table_name='index_test' and table_schema='dcomb'";
         Connection conn = null;
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb","repl","mysql57");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358","repl","mysql57");
             //获取表索引（非主键）
             PreparedStatement preparedStatement = conn.prepareStatement(sql);
             resultSet = preparedStatement.executeQuery();
-            if(resultSet.next()) {
+            while(resultSet.next()) {
                 long aLong = resultSet.getLong(1);
                 log.info("Table count : {}" , aLong);
             }
@@ -276,12 +281,12 @@ public class JdbcTest {
     }
 
     @Test
-    public void showDatabaseMetaData() {
+    public void queryDatabaseMetaData() {
         Connection conn = null;
         ResultSet resultSet = null;
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb","root","root");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/","root","root");
             DatabaseMetaData meta =  conn.getMetaData();
             //获取表索引（非主键）
             resultSet = meta.getIndexInfo("dcomb", "dcomb", "index_test", false, false);
@@ -396,8 +401,8 @@ public class JdbcTest {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&&zeroDateTimeBehavior=convertToNull","root","root");
-            preparedStatement = conn.prepareStatement("select * from source where id = ?");
-            preparedStatement.setInt(1,1);
+            preparedStatement = conn.prepareStatement("select * from source where age > ?");
+            preparedStatement.setInt(1,10);
             resultSet = preparedStatement.executeQuery();
             if(resultSet.next()){
                 java.sql.Date createTime = resultSet.getDate("create_time");
@@ -414,7 +419,93 @@ public class JdbcTest {
         } finally {
             if(preparedStatement != null) {
                 try {
-                    resultSet.close();
+                    if(resultSet != null){
+                        resultSet.close();
+                    }
+                    preparedStatement.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+
+    /**
+     * JDBC 流式查询
+     * 流式查询在读取结果集的过程中，你没办法执行其他sql语句，否则会报错
+     */
+    @Test
+    public void testStreamQuery() {
+        Connection conn = null ;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&&zeroDateTimeBehavior=convertToNull","root","root");
+//            preparedStatement = conn.prepareStatement("select * from source where age > ?", ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            //与上一行写法效果一样
+            preparedStatement = conn.prepareStatement("select * from source where age > ?");
+
+            //开启Stream方式查询重点 ！！！
+            preparedStatement.setFetchSize(Integer.MIN_VALUE);
+
+            preparedStatement.setInt(1,10);
+            resultSet = preparedStatement.executeQuery();
+            while(resultSet.next()){
+                log.info(resultSet.getString("id"));
+
+            }
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(preparedStatement != null) {
+                try {
+                    if(resultSet != null){
+                        resultSet.close();
+                    }
+                    preparedStatement.close();
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+    }
+
+
+    /**
+     * 设置JDBC Cursor查询
+     */
+    @Test
+    public void testCursorQuery() {
+        Connection conn = null ;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3358/dcomb?characterEncoding=UTF8&useUnicode=true&rewriteBatchedStatements=true&useCompression=true&useCursorFetch=true&zeroDateTimeBehavior=convertToNull","root","root");
+            preparedStatement = conn.prepareStatement("select * from source where id > ?");
+
+            // 游标查询用法 ： useCursorFetch=true | fetchSize   ！！！
+            preparedStatement.setFetchSize(10);
+            preparedStatement.setInt(1,10);
+            resultSet = preparedStatement.executeQuery();
+            while(resultSet.next()){
+                log.info(resultSet.getString("id"));
+            }
+        }catch (Exception e) {
+            Assert.fail(Printer.getException(e));
+        } finally {
+            if(preparedStatement != null) {
+                try {
+                    if(resultSet != null){
+                        resultSet.close();
+                    }
                     preparedStatement.close();
                     conn.close();
                 } catch (SQLException e) {
