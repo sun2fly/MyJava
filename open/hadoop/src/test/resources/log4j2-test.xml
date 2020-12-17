@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="error" monitorInterval="30">
+    <properties>
+        <Property name="logPattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-2level] %c{2} %C{30}.%M [Line:%L]  %msg%xEx%n"/>
+        <property name="file_size" value="5MB" />
+        <property name="file_encode" value="UTF-8" />
+        <property name="file_max_count" value="10" />
+    </properties>
+
+    <appenders>
+        <!--这个输出控制台的配置-->
+        <Console name="Console" target="SYSTEM_OUT">
+            <!--控制台只输出level及以上级别的信息（onMatch），其他的直接拒绝（onMismatch）-->
+            <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"/>
+            <!--这个都知道是输出日志的格式-->
+            <PatternLayout pattern="${logPattern}"/>
+        </Console>
+        <!-- 这个会打印出所有的信息，每次大小超过size，则这size大小的日志会自动存入按年份-月份建立的文件夹下面并进行压缩，作为存档-->
+        <RollingFile name="RollingFile" fileName="logs/app.log"
+                     filePattern="../../logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout pattern="${logPattern}"/>
+            <SizeBasedTriggeringPolicy size="50MB"/>
+            <!-- DefaultRolloverStrategy属性如不设置，则默认为最多同一文件夹下7个文件，这里设置了20 -->
+            <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
+    </appenders>
+    <loggers>
+        <root level="debug">
+            <!--<appender-ref ref="RollingFile"/>-->
+            <appender-ref ref="Console"/>
+        </root>
+    </loggers>
+</configuration>
