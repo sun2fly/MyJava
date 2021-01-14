@@ -75,4 +75,14 @@ public class User {
     public int hashCode() {
         return Objects.hash(age, name, address, list);
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "age=" + age +
+                ", name='" + name + '\'' +
+                ", address='" + address + '\'' +
+                ", list=" + list +
+                '}';
+    }
 }

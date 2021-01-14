@@ -14,8 +14,7 @@ import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -179,6 +178,22 @@ public class ObjectTest {
         long days = ChronoUnit.DAYS.between(dayMin,dayMax);
         long hours = ChronoUnit.HOURS.between(dayMin, dayMax);
         log.info("Days : {} , Hours : {}" , days,hours);
+
+        //convert to millseconds
+        LocalDate today = LocalDate.now();
+        long val = today.atStartOfDay(ZoneOffset.ofHours(8)).toInstant().toEpochMilli();
+        Assert.assertTrue(val == 1608134400000L);
+
+        //convert millseconds to LocalDateTime
+        long timestamp = System.currentTimeMillis();
+        LocalDate localDate = Instant.ofEpochMilli(timestamp).atZone(ZoneOffset.ofHours(8)).toLocalDate();
+        LocalDateTime localDateTime = Instant.ofEpochMilli(timestamp).atZone(ZoneOffset.ofHours(8)).toLocalDateTime();
+
+        //convert date to locaDate
+        Date date = new Date();
+        LocalDateTime localDateTime2 = date.toInstant().atZone(ZoneOffset.ofHours(8)).toLocalDateTime();
+        LocalDate localDate2 = date.toInstant().atZone(ZoneOffset.ofHours(8)).toLocalDate();
+
 
     }
 
@@ -363,7 +378,7 @@ public class ObjectTest {
     }
 
     @Test
-    public void testObjRef() throws Exception {
+    public void testObjectRef() throws Exception {
 
         List<String> list = Lists.newArrayList("a","b","c");
         User user = new User();
@@ -375,24 +390,13 @@ public class ObjectTest {
 
         log.info("User : {}" , user.toString());
 
-
+        //Felix: 对象是地址引用、赋值只是调整对象的地址
         Group group = new Group("group1",user);
         group.getUser().setName("lisi");
 
         list.clear();
 
         log.info("User : {}" , user.toString());
-
-
-        rtn();
-
-
-
-
-
-
-
-
 
     }
 
@@ -433,28 +437,38 @@ public class ObjectTest {
     }
 
     @Test
-    public void testDuty() {
-        Date date = new Date();
-        long d = 24*60*60*1000;
-        long day = date.getTime()/d -1;//
-
-        log.info(day % 8 + "");
-
-        Thread.yield();
-
-    }
-
-    @Test
-    public void testAA() {
+    public void testShift() {
+        /**
+         *   在Java编程语言中，移位操作符包含三种，分别是 <<（左移）、 >>（带符号右移）和 >>>（无符号右移），
+         * 这三种操作符都只能作用于long、int、short、byte、char这四种基本的整型类型上。
+         *  原码： 原码就是符号位加上真值的绝对值, 即用第一位表示符号（正数：0 / 负数：1）, 其余位表示值
+         *  补码：正数的补码就是其本身；负数的补码是在其原码的基础上, 符号位不变, 其余各位取反, 最后+1. (即在反码的基础上+1)；
+         *  反码：正数的反码是其本身；负数的反码是在其原码的基础上, 符号位不变，其余各个位取反；
+         *
+         * 1. 左移操作符 << 是将数据转换成二进制数后，向左移若干位，高位丢弃，低位补零 （左移一位相当于乘以2的1次方，左移n位就相当于乘以2的n次方）
+         * 2. 带符号右移操作符 >> 是带符号的右移操作符，将数据转换成二进制数后，向右移若干位，高位补符号位，低位丢弃 （右移一位相当于除以2的1次方，右移n位就相当于除以2的n次方）
+         * 3. 无符号右移操作符 >>> 二进制数后右移若干位,不论负数与否，结果都是高位补零，低位丢弃(只是对32位和64位的值有意义)
+         *
+         */
 
         int result = 50;
         int i = 0;
         while (result != 0) {
             i++;
             result = result >> 1;
-            log.info("==========result:{}==========" , result);
+            log.info("========== After right shift 2 bit :{}==========" , result);
+           /* tmp = result >>> 1;
+            log.info("========== After right shift 3 bit :{}==========" , tmp);*/
         }
         log.info("==========i:{}==========" , i);
+
+
+        result = 10;
+        log.info("origin bit : {}" , Integer.toBinaryString(result));
+
+        log.info("",Integer.toBinaryString(result << 1));
+        log.info("",Integer.toBinaryString(result >> 1));
+        log.info("",Integer.toBinaryString(result >>> 1));
 
         //0-1 1-2 2-4 4-8 8-16 16-32 32-64 64-128 128-256 256-512 512-1024 1024-2048
 
@@ -485,18 +499,33 @@ public class ObjectTest {
     }
 
 
+    @Test
+    public void testJdk8InterfaceFeture() {
+        TestInterface dInter = new TestInterface() {
+           /* @Override
+            public String sayHi() {
+                return null;
+            }*/
+        };
+        String iMOk = TestInterface.areYouOk();
+        String sayHi = dInter.sayHi();
+        log.info("from default method : {}" , sayHi);
+        log.info("from static method : {}" , iMOk);
+
+    }
 
 
-    private String rtn() throws Exception {
+
+    @Test
+    public void test_Exeption__Return_Finally() throws Exception {
         Throwable ex = null;
         try{
-            return "I'm ok.";
+            log.info("I'm method body.");
         } catch (Exception e) {
             ex = e;
         }finally {
             //return后仍然会执行
             log.info("========= 倔强的finally =========");
-
             //addSuppressed()方法
             // 在java7中为Throwable类增加addSuppressed方法。当一个异常被抛出的时候，可能有其他异常因为该异常而被抑制住，从而无法正常抛出。这时可以通过addSuppressed方法把这些被抑制的方法记录下来。被抑制的异常会出现在抛出的异常的堆栈信息中，也可以通过getSuppressed方法来获取这些异常。
             ex.addSuppressed(new RuntimeException("finally exception!"));
