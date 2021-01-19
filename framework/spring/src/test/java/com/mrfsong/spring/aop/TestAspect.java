@@ -1,6 +1,6 @@
 package com.mrfsong.spring.aop;
 
-import com.mrfsong.spring.bean.UserService;
+import com.mrfsong.spring.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -24,7 +24,7 @@ public class TestAspect {
     @Autowired
     private UserService userService;
 
-    @Pointcut("execution(* com.mrfsong.spring.bean.PrototypeService.sayHello(..))")
+    @Pointcut("execution(* com.mrfsong.spring.service.PrototypeService.sayHello(..))")
     public void pointCall() {
     }
 

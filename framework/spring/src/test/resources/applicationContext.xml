@@ -16,7 +16,19 @@
 >
 
         <context:annotation-config/>
-        <context:component-scan base-package="com.mrfsong.spring"/>
+        <context:component-scan base-package="com.mrfsong.spring.bean"/>
+
+        <context:property-placeholder location="application.properties" file-encoding="UTF-8"/>
+
+
+        <bean id="myBeanPostProcessor" class="com.mrfsong.spring.bean.processor.MyBeanPostProcessor"/>
+
+        <bean id="myInstantiationAwareBeanPostProcessor" class="com.mrfsong.spring.bean.processor.MyInstantiationAwareBeanPostProcessor"/>
+
+        <bean id="myBeanFactoryPostProcessor" class="com.mrfsong.spring.bean.processor.MyBeanFactoryPostProcessor"/>
+
+        <bean id="mySpringBean" class="com.mrfsong.spring.bean.MySpringBean" init-method="myInit"
+              destroy-method="myDestory" scope="singleton" />
 
         <aop:aspectj-autoproxy proxy-target-class="true"/>
 

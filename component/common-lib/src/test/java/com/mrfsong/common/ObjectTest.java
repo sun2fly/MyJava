@@ -258,6 +258,9 @@ public class ObjectTest {
         subList.stream().forEach(e -> log.info("element : {}" , e));
 
 
+        log.info("Max int : {}" , String.valueOf(Integer.MAX_VALUE));
+
+
 
 
     }

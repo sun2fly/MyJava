@@ -1,5 +1,6 @@
 package com.mrfsong.spring;
 
+import com.mrfsong.spring.bean.MySpringBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -19,8 +20,12 @@ public class SpringMain {
         //GenericApplicationContext
 
         ApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:applicationContext.xml");
-        applicationContext.getBean("userService");
-        applicationContext.getBean("prototypeService");
+//        applicationContext.getBean("userService");
+//        applicationContext.getBean("prototypeService");
+        MySpringBean testSpringBean = applicationContext.getBean("mySpringBean", MySpringBean.class);
+        System.out.println("mySpringBean = " + testSpringBean);
+
+        ((ClassPathXmlApplicationContext)applicationContext).registerShutdownHook();
     }
 
 }

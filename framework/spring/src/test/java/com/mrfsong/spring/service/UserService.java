@@ -1,4 +1,4 @@
-package com.mrfsong.spring.bean;
+package com.mrfsong.spring.service;
 
 import lombok.Data;
 import org.springframework.stereotype.Component;
