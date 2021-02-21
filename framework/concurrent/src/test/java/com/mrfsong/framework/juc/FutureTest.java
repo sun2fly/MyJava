@@ -24,6 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Slf4j
 public class FutureTest {
 
+    //开启缓存行填充（字段将和其他字段隔离开来，会被加载在独立的缓存行上，注解要生效需在启动参数上加-XX:-RestrictContended）
+    @sun.misc.Contended
+    private Long num;
+
 
     @Test
     public void testThreadRetry() throws Exception {
