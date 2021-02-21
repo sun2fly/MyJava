@@ -79,10 +79,12 @@ public class QuickSortV2Test {
 
         int privotVal = arr[low];
         while(low < high){
+            //自右向左
             while(low < high && arr[high] > privotVal){
                 high--;
             }
             swap(arr,low,high);
+            //自左向右
             while(low < high && arr[low] < privotVal){
                 low++;
             }
